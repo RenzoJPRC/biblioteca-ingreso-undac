@@ -417,3 +417,68 @@ async def padron_upload(request: Request, file: UploadFile = File(...)):
             os.remove(tmp_path)
         except:
             pass
+
+
+@router.get("/admin/mantenimiento", response_class=HTMLResponse)
+def mantenimiento_page(request: Request):
+    if not require_admin(request):
+        return RedirectResponse(url="/login", status_code=302)
+    return templates.TemplateResponse("mantenimiento.html", {"request": request})
+
+
+@router.get("/admin/backup/download")
+def backup_download(request: Request):
+    if not require_admin(request):
+        return RedirectResponse(url="/login", status_code=302)
+
+    db = SessionLocal()
+    try:
+        # 1. Dump Tables to CSV in memory
+        output = io.BytesIO()
+        with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            
+            # --- Tabla INGRESO ---
+            ingresos = db.execute(text("SELECT * FROM INGRESO")).mappings().all()
+            if ingresos:
+                df_ing = pd.DataFrame(ingresos)
+                csv_ing = df_ing.to_csv(index=False)
+                zip_file.writestr("ingresos.csv", csv_ing)
+            else:
+                zip_file.writestr("ingresos.csv", "id,fecha_hora,codigo_leido,tipo_codigo,dni_enlazado,piso,turno\n")
+
+            # --- Tabla PADRON_ALUMNO ---
+            # Solo exportamos columnas clave para no hacer el archivo gigante innecesariamente, 
+            # o todo si es respaldo completo. Vamos con todo.
+            padron = db.execute(text("SELECT * FROM PADRON_ALUMNO")).mappings().all()
+            if padron:
+                df_pad = pd.DataFrame(padron)
+                csv_pad = df_pad.to_csv(index=False)
+                zip_file.writestr("padron_alumno.csv", csv_pad)
+            else:
+                zip_file.writestr("padron_alumno.csv", "dni,codigo_matricula,apellidos_nombres,escuela,facultad,semestre,condicion\n")
+
+            # --- Tabla ADMIN_USUARIO ---
+            admins = db.execute(text("SELECT usuario, activo FROM ADMIN_USUARIO")).mappings().all()
+            if admins:
+                df_adm = pd.DataFrame(admins)
+                csv_adm = df_adm.to_csv(index=False)
+                zip_file.writestr("admin_usuarios.csv", csv_adm)
+            else:
+                zip_file.writestr("admin_usuarios.csv", "usuario,activo\n")
+
+            # Metadata
+            meta = f"Backup generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            zip_file.writestr("metadata.txt", meta)
+
+        output.seek(0)
+        
+        filename = f"backup_biblioteca_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        headers = {
+            'Content-Disposition': f'attachment; filename="{filename}"'
+        }
+        return StreamingResponse(output, headers=headers, media_type='application/zip')
+
+    except Exception as e:
+        return HTMLResponse(f"Error generando backup: {str(e)}", status_code=500)
+    finally:
+        db.close()

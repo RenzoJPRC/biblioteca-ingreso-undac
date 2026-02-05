@@ -8,116 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-color: #f3f4f6;
-            --card-bg: #ffffff;
-            --text-main: #1f2937;
-            --text-sub: #6b7280;
-            --primary: #2563eb;
-            --border-color: #e5e7eb;
-            --success: #059669;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 0;
-        }
-
-        .navbar {
-            background: #fff;
-            border-bottom: 1px solid var(--border-color);
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .brand {
-            font-weight: 700;
-            color: var(--text-main);
-            text-decoration: none;
-        }
-
-        .nav-link {
-            color: var(--text-sub);
-            text-decoration: none;
-            font-size: 0.9rem;
-            margin-left: 1rem;
-        }
-
-        .nav-link:hover {
-            color: var(--primary);
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-
-        .card {
-            background: #fff;
-            border-radius: 0.75rem;
-            padding: 2rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1.5rem;
-        }
-
-        .card-title {
-            margin: 0;
-            font-size: 1.25rem;
-            color: #111827;
-        }
-
-        .card-desc {
-            color: var(--text-sub);
-            margin-top: 0.5rem;
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
-
-        .btn-download {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            background-color: var(--success);
-            color: white;
-            text-decoration: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: opacity 0.2s;
-        }
-
-        .btn-download:hover {
-            opacity: 0.9;
-        }
-
-        .info-box {
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            color: #166534;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-top: 1.5rem;
-            font-size: 0.9rem;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/mantenimiento.css">
 </head>
 
 <body>
@@ -161,26 +52,7 @@
 
     </div>
 
-    <script>
-        // Auto Logout - 10 Minutos
-        (function () {
-            let timeout;
-            const LIMIT = 10 * 60 * 1000; // 10 min
-
-            function resetTimer() {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => {
-                    window.location.href = '/logout';
-                }, LIMIT);
-            }
-
-            window.onload = resetTimer;
-            document.onmousemove = resetTimer;
-            document.onkeypress = resetTimer;
-            document.onclick = resetTimer;
-            document.onscroll = resetTimer;
-        })();
-    </script>
+    <script src="/static/js/mantenimiento.js"></script>
 
 </body>
 

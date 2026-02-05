@@ -22,8 +22,9 @@ app.add_middleware(
 # Configurar templates globales
 templates = Jinja2Templates(directory="app/templates")
 
-# Montar archivos estáticos
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+# Montar archivos estáticos (Ruta absoluta para evitar errores)
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
