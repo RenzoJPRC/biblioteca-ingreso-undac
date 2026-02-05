@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selector de Módulo - Biblioteca</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg-color: #f3f4f6;
+            --card-hover: #1d4ed8;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #1f2937;
+            margin-bottom: 2rem;
+            font-weight: 800;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            max-width: 800px;
+            width: 100%;
+            padding: 0 1rem;
+        }
+
+        .tile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            color: #1f2937;
+            text-decoration: none;
+            height: 200px;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-size: 1.5rem;
+            font-weight: 600;
+            border: 2px solid transparent;
+        }
+
+        .tile:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .emoji {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .admin-tile {
+            background: #1f2937;
+            color: #ffffff;
+        }
+
+        .admin-tile:hover {
+            background: #374151;
+            color: #ffffff;
+            border-color: #4b5563;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Seleccione Módulo de Ingreso</h1>
+
+    <div class="grid">
+        <a href="/piso/1" class="tile">
+            <span class="emoji">1️⃣</span>
+            Piso 1
+        </a>
+        <a href="/piso/2" class="tile">
+            <span class="emoji">2️⃣</span>
+            Piso 2
+        </a>
+        <a href="/piso/3" class="tile">
+            <span class="emoji">3️⃣</span>
+            Piso 3
+        </a>
+        <a href="/login" class="tile admin-tile">
+            <span class="emoji">🛡️</span>
+            Administrador
+        </a>
+    </div>
+
+</body>
+
+</html>

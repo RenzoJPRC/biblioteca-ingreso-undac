@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reportes Avanzados - Biblioteca UNDAC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/css/reportes.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div style="display:flex; align-items:center;">
+            <a href="/panel" class="brand">← Dashboard</a>
+            <span style="margin: 0 1rem; color: #e5e7eb;">|</span>
+            <span style="font-weight:600; color:#1f2937;">Reportes Gerenciales</span>
+        </div>
+        <div class="user-menu">
+            <a href="/logout" class="nav-link">Cerrar sesión</a>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <div class="filters-card">
+            <div class="filter-group">
+                <span class="filter-label">Desde:</span>
+                <input type="date" id="startDate" class="date-input">
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Hasta:</span>
+                <input type="date" id="endDate" class="date-input">
+            </div>
+            <button onclick="loadData()" class="btn-apply">Actualizar Reporte</button>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- KPIs -->
+            <div class="card kpi-card">
+                <div class="kpi-val" id="kpiTotal">-</div>
+                <div class="kpi-label">Total Ingresos Periodo</div>
+            </div>
+            <div class="card kpi-card">
+                <div class="kpi-val" id="kpiAvg">-</div>
+                <div class="kpi-label">Promedio Diario</div>
+            </div>
+            <div class="card kpi-card">
+                <div class="kpi-val" id="kpiUnique">-</div>
+                <div class="kpi-label">Estudiantes Únicos</div>
+            </div>
+            <div class="card kpi-card">
+                <div class="kpi-val" id="kpiTopDay">-</div>
+                <div class="kpi-label">Día Más Concurrido</div>
+            </div>
+
+            <!-- Charts Row 1 -->
+            <div class="card chart-card-lg">
+                <h3 class="card-title">Tendencia de Asistencia (Por Día)</h3>
+                <div class="chart-container">
+                    <canvas id="chartTrend"></canvas>
+                </div>
+            </div>
+
+            <div class="card chart-card-sm">
+                <h3 class="card-title">Distribución por Facultad</h3>
+                <div class="chart-container">
+                    <canvas id="chartFacultad"></canvas>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="card table-card">
+                <h3 class="card-title">Top 10 Escuelas con Más Asistencia</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Posición</th>
+                            <th>Escuela Profesional</th>
+                            <th>Facultad</th>
+                            <th style="text-align:right;">Total Ingresos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableSchoolsBody">
+                        <!-- JS generated -->
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="/static/js/reportes.js"></script>
+
+</body>
+
+</html>

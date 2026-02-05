@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biblioteca UNDAC - Piso {{piso}}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/piso.css">
+</head>
+
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Biblioteca UNDAC</h1>
+      <div class="subtitle">Sistema de Control de Ingreso <span class="badge">Piso {{piso}}</span></div>
+    </header>
+
+    <div id="clock" class="clock-widget">--:--:--</div>
+
+    <div class="card" id="main-card">
+      <div id="prompt" class="prompt">Escanee su DNI o Carnet</div>
+
+      <div id="result-area">
+        <div class="details" id="placeholder-anim">
+          <svg width="60" height="60" viewBox="0 0 24 24" fill="none" class="pulse-animation"
+            style="border-radius:50%; color:var(--primary);">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="1" stroke-opacity="0.3" />
+            <path d="M7 8h10M7 12h10M7 16h10" stroke="currentColor" stroke-opacity="0.1" stroke-width="2" />
+          </svg>
+          <div style="margin-top:10px; font-size:0.9rem; opacity:0.7">Esperando lectura...</div>
+        </div>
+      </div>
+
+      <div class="counter-widget">
+        Ingresos hoy: <span id="counter-val" class="counter-val">...</span>
+      </div>
+    </div>
+
+    <div class="footer-hint">
+      Haga clic en cualquier lugar si el escáner no responde para reactivar el foco.
+    </div>
+  </div>
+
+  <!-- Input invisible siempre enfocado -->
+  <input type="text" id="scan-input" autocomplete="off" autofocus />
+
+  <!-- Modal Seguro -->
+  <div class="modal-overlay" id="secureExitModal">
+    <div class="modal-box">
+      <h3>🔒 Salida Segura</h3>
+      <p>Ingrese contraseña de Administrador</p>
+      <input type="password" id="adminPass" placeholder="Contraseña...">
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="toggleModal(false)">Cancelar</button>
+        <button class="btn-confirm" onclick="verifyExit()">Salir</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="exit-btn" onclick="toggleModal(true)">🔙</button>
+
+  <script>
+    // Configuración (Jinja2)
+    const PISO_ID = "{{piso}}";
+    const API_INGRESO = "/api/ingreso";
+    const API_CONTADOR = `/api/contador?hoy=1&piso=${PISO_ID}`;
+    const RESET_DELAY_MS = 4000;
+    const REFRESH_COUNTER_MS = 15000;
+  </script>
+
+  <script src="/static/js/piso.js"></script>
+</body>
+
+</html>

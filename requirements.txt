@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart
+sqlalchemy
+pyodbc
+pandas
+openpyxl
+passlib[bcrypt]
+python-dotenv
