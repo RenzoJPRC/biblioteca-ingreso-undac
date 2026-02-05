@@ -13,3 +13,7 @@ __pycache__/
 
 # Logs
 *.log
+
+# Excels / data
+*.xlsx
+*.xls
