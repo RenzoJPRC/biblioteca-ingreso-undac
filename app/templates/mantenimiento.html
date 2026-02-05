@@ -1,59 +1,43 @@
-<!doctype html>
-<html lang="es">
+{% extends "base_admin.html" %}
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mantenimiento - Biblioteca UNDAC</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/mantenimiento.css">
-</head>
+{% block title %}Mantenimiento - Biblioteca UNDAC{% endblock %}
 
-<body>
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/mantenimiento.css">
+{% endblock %}
 
-    <nav class="navbar">
-        <div style="display:flex; align-items:center;">
-            <a href="/panel" class="brand">← Dashboard</a>
-            <span style="margin: 0 1rem; color: #e5e7eb;">|</span>
-            <span style="font-weight:600; color:#1f2937;">Mantenimiento y Respaldo</span>
-        </div>
-        <div class="user-menu">
-            <a href="/logout" class="nav-link">Cerrar sesión</a>
-        </div>
-    </nav>
+{% block header_title %}Mantenimiento y Respaldo{% endblock %}
 
-    <div class="container">
+{% block content %}
+<div class="container-fluid">
 
-        <div class="card">
-            <div class="card-header">
-                <div>
-                    <h2 class="card-title">Copia de Seguridad Completa (Backup)</h2>
-                    <p class="card-desc">
-                        Descarga un archivo comprimido (.ZIP) que contiene toda la información de la base de datos:
-                        <br>• Historial completo de ingresos.
-                        <br>• Padrón de alumnos actual.
-                        <br>• Lista de administradores.
-                    </p>
-                </div>
-                <span style="font-size: 3rem;">📦</span>
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h2 class="card-title">Copia de Seguridad Completa (Backup)</h2>
+                <p class="card-desc">
+                    Descarga un archivo comprimido (.ZIP) que contiene toda la información de la base de datos:
+                    <br>• Historial completo de ingresos.
+                    <br>• Padrón de alumnos actual.
+                    <br>• Lista de administradores.
+                </p>
             </div>
-
-            <a href="/admin/backup/download" class="btn-download">
-                <span>⬇️ Descargar Backup (.zip)</span>
-            </a>
-
-            <div class="info-box">
-                <strong>Nota:</strong> Guarde este archivo en una ubicación segura (Disco externo o Nube).
-                Contiene información sensible de los estudiantes.
-            </div>
+            <span style="font-size: 3rem;">📦</span>
         </div>
 
+        <a href="/admin/backup/download" class="btn-download">
+            <span>⬇️ Descargar Backup (.zip)</span>
+        </a>
+
+        <div class="info-box">
+            <strong>Nota:</strong> Guarde este archivo en una ubicación segura (Disco externo o Nube).
+            Contiene información sensible de los estudiantes.
+        </div>
     </div>
 
-    <script src="/static/js/mantenimiento.js"></script>
+</div>
+{% endblock %}
 
-</body>
-
-</html>
+{% block extra_js %}
+<script src="/static/js/mantenimiento.js"></script>
+{% endblock %}

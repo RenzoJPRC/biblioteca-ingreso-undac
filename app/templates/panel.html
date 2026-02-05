@@ -1,105 +1,65 @@
-<!doctype html>
-<html lang="es">
+{% extends "base_admin.html" %}
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Panel - Biblioteca UNDAC</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="/static/css/panel.css">
-</head>
+{% block title %}Panel - Biblioteca UNDAC{% endblock %}
 
-<body>
+{% block header_title %}Resumen General{% endblock %}
 
-  <nav class="navbar">
-    <div class="brand">Biblioteca UNDAC</div>
-    <div class="user-menu">
-      <span>Hola, <b>{{ admin_user }}</b></span>
-      <a href="/admin/reporte/excel" class="btn-green">📊 Descargar Excel</a>
-      <a href="/logout">Cerrar sesión</a>
-    </div>
-  </nav>
-
-  <div class="container">
-
-    <div class="grid">
-      <!-- Stat Principal -->
-      <div class="card">
-        <h3>Ingresos Hoy</h3>
-        <div class="stat-huge">{{ total_hoy }}</div>
-      </div>
-
-      <!-- Por Piso -->
-      <div class="card">
-        <h3>Por Piso</h3>
-        <ul class="list-stat">
-          {% for r in por_piso %}
-          <li>
-            <span class="stat-label">Piso {{ r.piso }}</span>
-            <span class="stat-val">{{ r.total }}</span>
-          </li>
-          {% else %}
-          <li style="color:#9ca3af; font-size:0.9rem;">Sin datos aún</li>
-          {% endfor %}
-        </ul>
-      </div>
-
-      <!-- Por Turno -->
-      <div class="card">
-        <h3>Por Turno</h3>
-        <ul class="list-stat">
-          {% for r in por_turno %}
-          <li>
-            <span class="stat-label">{{ r.turno }}</span>
-            <span class="stat-val">{{ r.total }}</span>
-          </li>
-          {% else %}
-          <li style="color:#9ca3af; font-size:0.9rem;">Sin datos aún</li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
-
-    <!-- Gráfico -->
-    <div class="card" style="margin-bottom: 2rem;">
-      <h3>Afluencia por Hora</h3>
-      <div class="chart-container">
-        <canvas id="chartHora"></canvas>
-      </div>
-    </div>
-
-    <h3 style="margin-bottom:1rem; color:var(--text-sub);">Acciones Rápidas</h3>
-    <div class="actions-grid">
-      <a href="/admin/reportes" class="action-btn" style="border-color:#2563eb; background:#eff6ff;">
-        <span class="emoji">📈</span>
-        Reportes Gerenciales
-      </a>
-      <a href="/admin/alumno" class="action-btn">
-        <span class="emoji">🔎</span>
-        Buscar Alumno
-      </a>
-      <a href="/admin/padron" class="action-btn">
-        <span class="emoji">📤</span>
-        Actualizar Padrón
-      </a>
-      <a href="/admin/mantenimiento" class="action-btn" style="border-color:#16a34a; background:#f0fdf4;">
-        <span class="emoji">📦</span>
-        Backups
-      </a>
-    </div>
-
+{% block content %}
+<div class="stats-grid">
+  <!-- Stat Principal -->
+  <div class="card stat-card basic-card">
+    <h3>Ingresos Hoy</h3>
+    <div class="stat-huge">{{ total_hoy }}</div>
   </div>
 
-  <script src="/static/js/panel.js"></script>
-  <script>
-    const labels = {{ chart_labels | tojson }};
-    const dataVal = {{ chart_data | tojson }};
-    initChart(labels, dataVal);
-  </script>
+  <!-- Por Piso -->
+  <div class="card stat-card p-0">
+    <div class="card-head">
+      <h3>Por Piso</h3>
+    </div>
+    <ul class="list-stat">
+      {% for r in por_piso %}
+      <li>
+        <span class="stat-label">Piso {{ r.piso }}</span>
+        <span class="stat-val">{{ r.total }}</span>
+      </li>
+      {% else %}
+      <li class="empty-stat">Sin datos aún</li>
+      {% endfor %}
+    </ul>
+  </div>
 
-</body>
+  <!-- Por Turno -->
+  <div class="card stat-card p-0">
+    <div class="card-head">
+      <h3>Por Turno</h3>
+    </div>
+    <ul class="list-stat">
+      {% for r in por_turno %}
+      <li>
+        <span class="stat-label">{{ r.turno }}</span>
+        <span class="stat-val">{{ r.total }}</span>
+      </li>
+      {% else %}
+      <li class="empty-stat">Sin datos aún</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
 
-</html>
+<!-- Gráfico -->
+<div class="card chart-card">
+  <h3>Afluencia por Hora</h3>
+  <div class="chart-container">
+    <canvas id="chartHora"></canvas>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const labels = {{ chart_labels | tojson }};
+  const dataVal = {{ chart_data | tojson }};
+  initChart(labels, dataVal);
+</script>
+{% endblock %}

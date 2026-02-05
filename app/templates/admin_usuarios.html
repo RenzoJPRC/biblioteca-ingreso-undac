@@ -1,0 +1,170 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Gestión de Usuarios - Biblioteca UNDAC{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/mantenimiento.css">
+<!-- Reuse some admin styles -->
+<link rel="stylesheet" href="/static/css/admin_usuarios.css">
+{% endblock %}
+
+{% block header_title %}Gestión de Administradores{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="card">
+        <div class="card-header" style="align-items: center;">
+            <h2 class="card-title">Usuarios del Sistema</h2>
+
+            {% if current_user == 'admin' %}
+            <button id="newUserBtn" class="btn-download"
+                style="background-color: var(--primary); padding: 0.5rem 1rem; font-size: 0.9rem;">
+                + Nuevo Usuario
+            </button>
+            <button id="profileBtn" class="btn-download"
+                style="background-color: #4b5563; padding: 0.5rem 1rem; font-size: 0.9rem; margin-left: 0.5rem;">
+                👤 Mi Perfil
+            </button>
+            {% endif %}
+        </div>
+
+        {% if msg %}
+        <div style="background: #eff6ff; color: #1d4ed8; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+            {{ msg }}
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div style="background: #fef2f2; color: #b91c1c; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td><strong>{{ u.usuario }}</strong></td>
+                    <td>
+                        {% if u.activo %}
+                        <span class="badge-active">Activo</span>
+                        {% else %}
+                        <span class="badge-inactive">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <!-- No se puede borrar a sí mismo (logica simple en frontend, validada en backend) -->
+                        {% if u.usuario != current_user %}
+                        {% if current_user == 'admin' %}
+                        <button class="btn btn-sm" title="Cambiar Contraseña"
+                            onclick="openChangePassModal('{{ u.usuario }}')">🔑 Cambiar Clave</button>
+                        <button class="btn btn-sm btn-danger" onclick="confirmDelete('{{ u.usuario }}')">🗑️
+                            Eliminar</button>
+                        {% endif %}
+                        {% else %}
+                        <span style="font-size: 0.85rem; color: var(--text-sub);">(Tú)</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <strong>Nota:</strong> Los usuarios "Activos" tienen acceso completo al Panel de Control y Reportes.
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal Nuevo Usuario -->
+<div id="userModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Nuevo Administrador</h3>
+            <button class="close-btn">&times;</button>
+        </div>
+        <form method="post" action="/admin/usuarios/crear">
+            <div class="form-group">
+                <label class="form-label">Nombre de Usuario</label>
+                <input type="text" name="usuario" class="form-input" required autocomplete="off"
+                    placeholder="ej. jmonzoni">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Contraseña</label>
+                <input type="password" name="password" class="form-input" required autocomplete="new-password"
+                    placeholder="******">
+            </div>
+            <button type="submit" class="btn-primary">Crear Usuario</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Mi Perfil -->
+<div id="profileModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Editar Mi Perfil</h3>
+            <button class="close-btn-profile"
+                style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-sub)">&times;</button>
+        </div>
+        <form method="post" action="/admin/usuarios/perfil">
+            <div class="form-group">
+                <label class="form-label">Usuario</label>
+                <input type="text" name="new_username" class="form-input" required value="{{ current_user }}">
+            </div>
+
+            <div style="margin: 1.5rem 0; border-top:1px solid #eee; padding-top:1rem;">
+                <label class="form-label" style="color:var(--primary)">Seguridad (Requerido)</label>
+                <input type="password" name="current_password" class="form-input" required
+                    placeholder="Tu contraseña actual">
+                <p style="font-size:0.8rem; color:var(--text-sub); margin-top:0.2rem;">Debes ingresar tu clave
+                    actual para guardar cambios.</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Nueva Contraseña (Opcional)</label>
+                <input type="password" name="new_password" class="form-input"
+                    placeholder="Dejar caldero si no deseas cambiarla">
+            </div>
+
+            <button type="submit" class="btn-primary">Guardar Cambios</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Cambiar Clave (Admin a otro usuario) -->
+<div id="changePassModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Cambiar Contraseña</h3>
+            <button class="close-btn-pass"
+                style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-sub)">&times;</button>
+        </div>
+        <form method="post" action="/admin/usuarios/password">
+            <input type="hidden" name="usuario" id="changePassUser">
+            <div class="form-group">
+                <label class="form-label">Usuario a modificar: <span id="lblChangeUser"
+                        style="font-weight:bold"></span></label>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nueva Contraseña</label>
+                <input type="password" name="new_password" class="form-input" required placeholder="Nueva contraseña">
+            </div>
+            <button type="submit" class="btn-primary">Actualizar Contraseña</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/admin_usuarios.js"></script>
+{% endblock %}

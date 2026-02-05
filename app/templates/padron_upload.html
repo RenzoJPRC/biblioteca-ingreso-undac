@@ -1,66 +1,56 @@
-<!doctype html>
-<html lang="es">
+{% extends "base_admin.html" %}
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Actualizar Padrón - Biblioteca UNDAC</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/padron_upload.css">
-</head>
+{% block title %}Actualizar Padrón - Biblioteca UNDAC{% endblock %}
 
-<body>
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/padron_upload.css">
+{% endblock %}
 
-  <nav class="navbar">
-    <a href="/panel" class="brand">← Panel de Control</a>
-    <a href="/logout" class="back-link">Cerrar sesión</a>
-  </nav>
+{% block header_title %}Actualizar Padrón{% endblock %}
 
-  <div class="container">
-    <div class="upload-card">
-      <h2 style="margin-top:0;">Actualizar Padrón de Alumnos</h2>
-      <p style="color:var(--text-sub); margin-bottom:1.5rem;">Sube el archivo Excel (.xlsx) con los datos más recientes.
-      </p>
+{% block content %}
+<div class="container-fluid">
+  <div class="upload-card">
+    <h2 style="margin-top:0; font-size:1.2rem;">Carga Masiva de Alumnos</h2>
+    <p style="color:var(--text-sub); margin-bottom:1.5rem;">Sube el archivo Excel (.xlsx) con los datos más recientes.
+    </p>
 
-      <form method="post" action="/admin/padron/upload" enctype="multipart/form-data">
-        <div class="file-drop-area">
-          <input type="file" name="file" accept=".xlsx" required>
-          <div style="font-size:0.875rem; color:#94a3b8;">Formatos soportados: .xlsx</div>
-        </div>
-        <button type="submit" class="btn">Subir e Importar</button>
-      </form>
-    </div>
-
-    {% if resultado %}
-    <div class="report-card">
-      <div class="report-header">Proceso Completado</div>
-      <div class="report-body">
-        <ul class="report-list">
-          <li><span>Registros Insertados</span> <b>{{ resultado.insertados }}</b></li>
-          <li><span>Registros Existentes</span> <b>{{ resultado.ya_existian }}</b></li>
-          <li><span>Errores</span> <b style="color:red;">{{ resultado.errores }}</b></li>
-        </ul>
-
-        {% if resultado.detalle_errores and resultado.detalle_errores|length > 0 %}
-        <div class="error-list">
-          <h4>Detalle de Errores (Primeros 10)</h4>
-          <ol>
-            {% for e in resultado.detalle_errores %}
-            <li>{{ e }}</li>
-            {% endfor %}
-          </ol>
-        </div>
-        {% endif %}
+    <form method="post" action="/admin/padron/upload" enctype="multipart/form-data">
+      <div class="file-drop-area">
+        <input type="file" name="file" accept=".xlsx" required>
+        <div style="font-size:0.875rem; color:#94a3b8;">Formatos soportados: .xlsx</div>
       </div>
-    </div>
-    {% endif %}
-
+      <button type="submit" class="btn">Subir e Importar</button>
+    </form>
   </div>
 
-  <script src="/static/js/padron_upload.js"></script>
+  {% if resultado %}
+  <div class="report-card">
+    <div class="report-header">Proceso Completado</div>
+    <div class="report-body">
+      <ul class="report-list">
+        <li><span>Registros Insertados</span> <b>{{ resultado.insertados }}</b></li>
+        <li><span>Registros Existentes</span> <b>{{ resultado.ya_existian }}</b></li>
+        <li><span>Errores</span> <b style="color:red;">{{ resultado.errores }}</b></li>
+      </ul>
 
-</body>
+      {% if resultado.detalle_errores and resultado.detalle_errores|length > 0 %}
+      <div class="error-list">
+        <h4>Detalle de Errores (Primeros 10)</h4>
+        <ol>
+          {% for e in resultado.detalle_errores %}
+          <li>{{ e }}</li>
+          {% endfor %}
+        </ol>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
 
-</html>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/padron_upload.js"></script>
+{% endblock %}

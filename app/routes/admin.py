@@ -482,3 +482,179 @@ def backup_download(request: Request):
         return HTMLResponse(f"Error generando backup: {str(e)}", status_code=500)
     finally:
         db.close()
+
+
+@router.get("/admin/usuarios", response_class=HTMLResponse)
+def usuarios_list(request: Request):
+    if not require_admin(request):
+        return RedirectResponse(url="/login", status_code=302)
+
+    db = SessionLocal()
+    try:
+        users = db.execute(text("SELECT usuario, activo FROM ADMIN_USUARIO ORDER BY usuario")).mappings().all()
+        return templates.TemplateResponse(
+            "admin_usuarios.html", 
+            {
+                "request": request, 
+                "users": users, 
+                "current_user": request.session.get("admin_user"),
+                "msg": request.query_params.get("msg"),
+                "error": request.query_params.get("error")
+            }
+        )
+    finally:
+        db.close()
+
+
+@router.post("/admin/usuarios/crear")
+def usuario_create(request: Request, usuario: str = Form(...), password: str = Form(...)):
+    if not require_admin(request):
+        return RedirectResponse(url="/login", status_code=302)
+
+    # Restricción: Solo 'admin' puede crear
+    if request.session.get("admin_user") != "admin":
+         return RedirectResponse(url="/admin/usuarios?error=Solo+el+superadmin+puede+crear+usuarios", status_code=302)
+
+    if not usuario or not password:
+        return RedirectResponse(url="/admin/usuarios?error=Faltan+datos", status_code=302)
+
+    db = SessionLocal()
+    try:
+        # Check if exists
+        exists = db.execute(text("SELECT usuario FROM ADMIN_USUARIO WHERE usuario = :u"), {"u": usuario}).first()
+        if exists:
+            return RedirectResponse(url="/admin/usuarios?error=El+usuario+ya+existe", status_code=302)
+
+        # Hash password
+        pwd_hash = generate_password_hash(password)
+        
+        db.execute(
+            text("INSERT INTO ADMIN_USUARIO (usuario, password_hash, activo) VALUES (:u, :p, 1)"),
+            {"u": usuario, "p": pwd_hash}
+        )
+        db.commit()
+        return RedirectResponse(url="/admin/usuarios?msg=Usuario+creado+correctamente", status_code=302)
+    except Exception as e:
+        return RedirectResponse(url=f"/admin/usuarios?error={str(e)}", status_code=302)
+    finally:
+        db.close()
+
+
+@router.post("/admin/usuarios/eliminar")
+def usuario_delete(request: Request, usuario: str = Form(...)):
+    if not require_admin(request):
+        return RedirectResponse(url="/login", status_code=302)
+
+    current = request.session.get("admin_user")
+    
+    # Restricción: Solo 'admin' puede eliminar
+    if current != "admin":
+        return RedirectResponse(url="/admin/usuarios?error=Solo+el+superadmin+puede+eliminar+usuarios", status_code=302)
+
+    if usuario == current:
+        return RedirectResponse(url="/admin/usuarios?error=No+puedes+eliminarte+a+ti+mismo", status_code=302)
+
+    # Protección extra: Nadie puede borrar a 'admin'
+    if usuario == "admin":
+        return RedirectResponse(url="/admin/usuarios?error=No+se+puede+eliminar+al+superadmin", status_code=302)
+
+    db = SessionLocal()
+    try:
+        db.execute(text("DELETE FROM ADMIN_USUARIO WHERE usuario = :u"), {"u": usuario})
+        db.commit()
+        return RedirectResponse(url="/admin/usuarios?msg=Usuario+eliminado", status_code=302)
+    finally:
+        db.close()
+
+
+@router.post("/admin/usuarios/password")
+def usuario_reset_pass(request: Request, usuario: str = Form(...), new_password: str = Form(...)):
+    if not require_admin(request):
+        return RedirectResponse(url="/login", status_code=302)
+
+    # Restricción: Solo 'admin' puede resetear claves de otros
+    if request.session.get("admin_user") != "admin":
+        return RedirectResponse(url="/admin/usuarios?error=Solo+el+superadmin+puede+resetear+claves", status_code=302)
+
+    if not new_password or len(new_password.strip()) < 1:
+         return RedirectResponse(url="/admin/usuarios?error=La+contraseña+no+puede+estar+vacía", status_code=302)
+
+    pwd_hash = generate_password_hash(new_password.strip())
+
+    db = SessionLocal()
+    try:
+        db.execute(
+            text("UPDATE ADMIN_USUARIO SET password_hash = :p WHERE usuario = :u"),
+            {"p": pwd_hash, "u": usuario}
+        )
+        db.commit()
+        return RedirectResponse(url=f"/admin/usuarios?msg=Contraseña+de+'{usuario}'+actualizada", status_code=302)
+    finally:
+        db.close()
+
+
+@router.post("/admin/usuarios/perfil")
+def usuario_update_profile(
+    request: Request, 
+    new_username: str = Form(...), 
+    current_password: str = Form(...), 
+    new_password: str = Form(None)
+):
+    if not require_admin(request):
+        return RedirectResponse(url="/login", status_code=302)
+
+    current_user = request.session.get("admin_user")
+
+    # Restricción: Solo 'admin' puede editar su perfil. 
+    # Los demás usuarios no tienen permiso de auto-edición.
+    if current_user != "admin":
+        return RedirectResponse(url="/admin/usuarios?error=No+tienes+permisos+para+editar+perfiles", status_code=302)
+    
+    new_username = new_username.strip()
+
+    if not current_user or not new_username or not current_password:
+        return RedirectResponse(url="/admin/usuarios?error=Datos+incompletos", status_code=302)
+
+    db = SessionLocal()
+    try:
+        # 1. Verificar usuario actual y contraseña
+        row = db.execute(
+            text("SELECT usuario, password_hash FROM ADMIN_USUARIO WHERE usuario = :u"),
+            {"u": current_user}
+        ).mappings().first()
+
+        if not row or not check_password_hash(row["password_hash"], current_password):
+            return RedirectResponse(url="/admin/usuarios?error=Contraseña+actual+incorrecta", status_code=302)
+
+        # 2. Si cambia de nombre, verificar q no exista el nuevo
+        if new_username != current_user:
+            exists = db.execute(
+                text("SELECT usuario FROM ADMIN_USUARIO WHERE usuario = :u"), 
+                {"u": new_username}
+            ).first()
+            if exists:
+                return RedirectResponse(url="/admin/usuarios?error=El+nombre+de+usuario+ya+está+en+uso", status_code=302)
+
+        # 3. Preparar Update
+        update_query = "UPDATE ADMIN_USUARIO SET usuario = :new_u"
+        params = {"new_u": new_username, "old_u": current_user}
+
+        if new_password and new_password.strip():
+            params["p"] = generate_password_hash(new_password.strip())
+            update_query += ", password_hash = :p"
+        
+        update_query += " WHERE usuario = :old_u"
+
+        db.execute(text(update_query), params)
+        db.commit()
+
+        # 4. Actualizar sesión si cambió el nombre
+        if new_username != current_user:
+            request.session["admin_user"] = new_username
+
+        return RedirectResponse(url="/admin/usuarios?msg=Perfil+actualizado+correctamente", status_code=302)
+
+    except Exception as e:
+        return RedirectResponse(url=f"/admin/usuarios?error={str(e)}", status_code=302)
+    finally:
+        db.close()

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Biblioteca UNDAC{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/panel.css?v=2">
+    {% block extra_css %}{% endblock %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    <div class="dashboard-layout">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Biblioteca</h2>
+                <span class="badgetag">Admin</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <!-- Principal -->
+                <div class="nav-label">Principal</div>
+                <a href="/panel" class="nav-item">
+                    <span class="icon"></span> Dashboard
+                </a>
+                <a href="/admin/reportes" class="nav-item">
+                    <span class="icon"></span> Reportes
+                </a>
+
+
+                <!-- Gestión -->
+                <div class="nav-label">Gestión</div>
+                <a href="/admin/alumno" class="nav-item">
+                    <span class="icon"></span> Buscar Alumno
+                </a>
+                <a href="/admin/padron" class="nav-item">
+                    <span class="icon"></span> Actualizar Padrón
+                </a>
+                <a href="/admin/usuarios" class="nav-item">
+                    <span class="icon"></span> Usuarios Admin
+                </a>
+
+                <!-- Sistema -->
+                <div class="nav-label">Sistema</div>
+                <a href="/admin/mantenimiento" class="nav-item">
+                    <span class="icon"></span> Backups
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <small>Conectado como:</small>
+                    <!-- Try to use admin_user from context if available, otherwise just 'Admin' -->
+                    <strong>{{ admin_user if admin_user else 'Admin' }}</strong>
+                </div>
+                <a href="/logout" class="logout-btn">
+                    <span class="icon"></span> Salir
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>{% block header_title %}Resumen General{% endblock %}</h1>
+                <div class="date-display" id="currentDate"></div>
+            </header>
+
+            {% block content %}
+            {% endblock %}
+
+        </main>
+    </div>
+
+    <script src="/static/js/panel.js"></script>
+    <script>
+        // Set current date
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const dateEl = document.getElementById('currentDate');
+        if (dateEl) {
+            dateEl.innerText = new Date().toLocaleDateString('es-ES', dateOptions);
+        }
+
+        // Highlight active sidebar item
+        const currentPath = window.location.pathname;
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+            if (item.getAttribute('href') === currentPath) {
+                item.classList.add('active');
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+
+</body>
+
+</html>
