@@ -1,0 +1,9 @@
+temp_db_analysis/
+__pycache__/
+*.pyc
+.env
+.venv
+env/
+venv/
+.idea/
+.vscode/

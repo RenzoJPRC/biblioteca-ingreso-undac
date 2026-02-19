@@ -1,0 +1,367 @@
+{% extends "layout_admin.html" %}
+
+{% block content %}
+<header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
+    <h2 class="text-lg font-bold text-slate-700">Gestión de Carnets</h2>
+</header>
+
+<div class="flex-1 overflow-y-auto p-6 space-y-4 flex flex-col h-full">
+
+    <!-- BUSCADOR -->
+    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 shrink-0">
+        <h3 class="text-sm font-bold text-slate-500 uppercase mb-4">Buscar Alumno</h3>
+        <div class="flex gap-4">
+            <input type="text" id="input-busqueda" placeholder="Ingresa DNI, Código o Nombre..."
+                class="flex-1 border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 outline-none">
+            <button onclick="nuevaBusqueda()"
+                class="bg-sky-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-sky-500 transition-colors">
+                <i class="ph ph-magnifying-glass text-lg align-middle"></i> Buscar
+            </button>
+        </div>
+    </div>
+
+    <!-- BARRA DE ACCIONES MASIVAS (Oculta por defecto) -->
+    <div id="barra-acciones"
+        class="hidden bg-slate-800 text-white p-4 rounded-xl shadow-lg flex items-center justify-between animate-fade-in shrink-0">
+        <div class="font-bold flex items-center gap-2">
+            <i class="ph ph-check-square text-xl text-sky-400"></i>
+            <span id="contador-seleccionados" class="text-xl">0</span> seleccionados
+        </div>
+        <div class="flex gap-3">
+            <button onclick="accionMasiva('desactivar')"
+                class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+                <i class="ph ph-prohibit"></i> Desactivar
+            </button>
+            <button onclick="accionMasiva('auto')"
+                class="bg-slate-600 hover:bg-slate-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+                <i class="ph ph-arrows-clockwise"></i> Auto
+            </button>
+            <button onclick="accionMasiva('activar')"
+                class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+                <i class="ph ph-check-circle"></i> Activar
+            </button>
+        </div>
+    </div>
+
+    <!-- TABLA DE RESULTADOS (Scrollable) -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col min-h-0"
+        id="contenedor-resultados">
+        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+            <h3 class="font-bold text-slate-700">Listado de Alumnos</h3>
+            <span id="info-paginacion" class="text-xs text-slate-500 font-bold uppercase">Cargando...</span>
+        </div>
+
+        <!-- Header fijo -->
+        <div class="overflow-y-auto flex-1 relative">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-50 text-xs uppercase text-slate-400 font-bold sticky top-0 z-10 shadow-sm">
+                    <tr>
+                        <th class="px-6 py-3 bg-slate-50 border-b border-slate-200 w-10 text-center">
+                            <input type="checkbox" id="check-todos" onchange="toggleTodos()"
+                                class="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 cursor-pointer">
+                        </th>
+                        <th class="px-6 py-3 bg-slate-50 border-b border-slate-200">Alumno</th>
+                        <th class="px-6 py-3 bg-slate-50 border-b border-slate-200">DNI / Código</th>
+                        <th class="px-6 py-3 bg-slate-50 border-b border-slate-200">Escuela</th>
+                        <th class="px-6 py-3 bg-slate-50 border-b border-slate-200">Vencimiento</th>
+                        <th class="px-6 py-3 bg-slate-50 border-b border-slate-200">Estado</th>
+                        <th class="px-6 py-3 bg-slate-50 border-b border-slate-200 text-center">Ed.</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-sm" id="tabla-body">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- FOOTER PAGINACION -->
+        <div class="px-6 py-3 border-t border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+            <button onclick="cambiarPagina(-1)" id="btn-prev"
+                class="flex items-center gap-1 text-slate-500 hover:text-sky-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm transition-colors">
+                <i class="ph ph-caret-left text-lg"></i> Anterior
+            </button>
+
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-400 uppercase">Página</span>
+                <select id="select-pagina" onchange="irAPagina(this.value)"
+                    class="bg-white border border-slate-300 text-slate-700 text-xs rounded px-2 py-1 outline-none focus:border-sky-500 font-bold">
+                </select>
+            </div>
+
+            <button onclick="cambiarPagina(1)" id="btn-next"
+                class="flex items-center gap-1 text-slate-500 hover:text-sky-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm transition-colors">
+                Siguiente <i class="ph ph-caret-right text-lg"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDITAR FECHA -->
+<div id="modal-editar" class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg w-96 shadow-2xl animate-scale-up">
+        <h3 class="font-bold mb-2 text-lg">Modificar Vencimiento</h3>
+        <p id="modal-nombre-alumno" class="text-slate-500 text-sm mb-4"></p>
+
+        <input type="hidden" id="modal-alumno-id">
+
+        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nueva Fecha</label>
+        <input type="date" id="modal-fecha"
+            class="border w-full mb-2 p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+        <p class="text-xs text-slate-400 mb-4">Déjalo vacío para usar la fecha automática (NULL).</p>
+
+        <div class="flex justify-end gap-2">
+            <button onclick="cerrarModal()"
+                class="text-slate-500 px-3 py-2 hover:bg-slate-100 rounded font-medium">Cancelar</button>
+            <button onclick="guardarFecha()"
+                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500 font-bold transition-colors">Guardar</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentPage = 1;
+    let totalPages = 1;
+    let selectedIds = new Set(); // Almacena IDs seleccionados globalmente
+
+    // --- INICIALIZACIÓN ---
+    window.onload = function () {
+        buscarAlumno();
+    };
+
+    // --- BÚSQUEDA Y RENDERIZADO ---
+    function buscarAlumno(pagina = 1) {
+        const query = document.getElementById('input-busqueda').value;
+        currentPage = pagina;
+
+        const url = `/admin/buscar_alumno?q=${query}&page=${currentPage}`;
+
+        // NO reseteamos selectedIds aquí para mantener selección entre búsquedas/páginas
+        // Solo reseteamos el check "master" visual
+        document.getElementById('check-todos').checked = false;
+
+        // Indicador de carga
+        const info = document.getElementById('info-paginacion');
+        info.innerText = "Cargando...";
+
+        fetch(url)
+            .then(res => res.json())
+            .then(resp => {
+                const tbody = document.getElementById('tabla-body');
+                tbody.innerHTML = '';
+
+                const data = resp.data;
+                const meta = resp.pagination;
+
+                // Actualizar variables
+                currentPage = meta.page;
+                totalPages = meta.total_pages;
+
+                if (meta.total_items === 0) {
+                    info.innerText = "0 Resultados";
+                    tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-12 text-center text-slate-400 font-medium">No se encontraron alumnos</td></tr>';
+                    actualizarControlesPaginacion();
+                    actualizarContador(); // Actualizar barra con el total global
+                    return;
+                }
+
+                info.innerText = `Mostrando ${data.length} de ${meta.total_items} alumnos`;
+
+                data.forEach(alumno => {
+                    const isActivo = alumno.estado === 'ACTIVO';
+                    const estadoHtml = isActivo
+                        ? `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">ACTIVO</span>`
+                        : `<span class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">VENCIDO</span>`;
+
+                    const fechaManual = alumno.fecha_manual
+                        ? alumno.fecha_manual
+                        : '<span class="text-slate-400 italic">Auto</span>';
+
+                    // Verificar si está seleccionado
+                    const isChecked = selectedIds.has(String(alumno.id)) ? 'checked' : '';
+
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition-colors group";
+                    tr.innerHTML = `
+                        <td class="px-6 py-3 text-center border-b border-slate-50 relative">
+                            <input type="checkbox" value="${alumno.id}" onchange="toggleIndividual(this)" ${isChecked}
+                                   class="check-alumno w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 cursor-pointer">
+                        </td>
+                        <td class="px-6 py-3 font-medium text-slate-700 border-b border-slate-50">${alumno.nombre}</td>
+                        <td class="px-6 py-3 border-b border-slate-50">
+                            <div class="text-slate-600">${alumno.dni}</div>
+                            <div class="text-xs text-slate-400 font-mono">${alumno.codigo}</div>
+                        </td>
+                        <td class="px-6 py-3 text-slate-500 text-xs border-b border-slate-50">${alumno.escuela}</td>
+                        <td class="px-6 py-3 font-mono text-xs border-b border-slate-50">${fechaManual}</td>
+                        <td class="px-6 py-3 border-b border-slate-50">${estadoHtml}</td>
+                        <td class="px-6 py-3 text-center border-b border-slate-50">
+                            <button onclick="abrirModal(${alumno.id}, '${alumno.nombre}', '${alumno.fecha_manual || ''}')" 
+                                    class="text-slate-400 hover:text-blue-600 p-2 rounded-full hover:bg-blue-50 transition-all" title="Editar Vencimiento">
+                                <i class="ph ph-pencil-simple text-lg"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                actualizarControlesPaginacion();
+                actualizarContador(); // Actualizar barra con el total global
+            })
+            .catch(err => console.error("Error cargando alumnos:", err));
+    }
+
+    // --- PAGINACIÓN UI ---
+    function actualizarControlesPaginacion() {
+        const btnPrev = document.getElementById('btn-prev');
+        const btnNext = document.getElementById('btn-next');
+        const select = document.getElementById('select-pagina');
+
+        btnPrev.disabled = currentPage <= 1;
+        btnNext.disabled = currentPage >= totalPages;
+
+        // Llenar select de paginas
+        select.innerHTML = '';
+        /* Optimización: Si son muchas páginas, no renderizar todas en el select, 
+           pero por UX simple renderizaremos hasta 100 max o rango cercano */
+
+        let startPage = Math.max(1, currentPage - 10);
+        let endPage = Math.min(totalPages, currentPage + 10);
+
+        // Siempre incluir la 1 y la ultima si estan lejos? 
+        // Por simplicidad, mostramos un rango dinámico
+
+        if (totalPages <= 20) {
+            startPage = 1; endPage = totalPages;
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.innerText = i;
+            if (i === currentPage) opt.selected = true;
+            select.appendChild(opt);
+        }
+    }
+
+    function cambiarPagina(delta) {
+        const nuevaPagina = currentPage + delta;
+        if (nuevaPagina >= 1 && nuevaPagina <= totalPages) {
+            buscarAlumno(nuevaPagina);
+        }
+    }
+
+    function irAPagina(pagina) {
+        buscarAlumno(parseInt(pagina));
+    }
+
+    // Wrapper para el botón de buscar (resetea a pagina 1)
+    function nuevaBusqueda() {
+        buscarAlumno(1);
+    }
+
+    // --- GESTIÓN DE SELECCIÓN (Checkboxes) ---
+
+    function toggleIndividual(checkbox) {
+        const id = checkbox.value;
+        if (checkbox.checked) {
+            selectedIds.add(id);
+        } else {
+            selectedIds.delete(id);
+            document.getElementById('check-todos').checked = false; // Desmarcar master si uno se desmarca
+        }
+        actualizarContador();
+    }
+
+    function toggleTodos() {
+        const master = document.getElementById('check-todos');
+        const checks = document.querySelectorAll('.check-alumno'); // Solo los visibles
+
+        checks.forEach(c => {
+            c.checked = master.checked;
+            const id = c.value;
+            if (master.checked) {
+                selectedIds.add(id);
+            } else {
+                selectedIds.delete(id);
+            }
+        });
+        actualizarContador();
+    }
+
+    function actualizarContador() {
+        const totalSeleccionados = selectedIds.size;
+        const barra = document.getElementById('barra-acciones');
+        const contador = document.getElementById('contador-seleccionados');
+
+        contador.innerText = totalSeleccionados;
+
+        if (totalSeleccionados > 0) barra.classList.remove('hidden');
+        else barra.classList.add('hidden');
+    }
+
+    // --- ACCIONES MASIVAS ---
+
+    function accionMasiva(accion) {
+        const ids = Array.from(selectedIds);
+
+        if (ids.length === 0) return;
+        if (!confirm(`¿Estás seguro de aplicar esta acción a ${ids.length} alumnos seleccionados?`)) return;
+
+        fetch('/admin/actualizar_carnet_masivo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: ids, accion: accion })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.msg);
+                    selectedIds.clear(); // Limpiar selección tras acción exitosa
+                    actualizarContador();
+                    buscarAlumno(currentPage); // Recargar página actual
+                } else {
+                    alert('Error: ' + data.msg);
+                }
+            });
+    }
+
+    // --- MODAL DE EDICIÓN ---
+    function abrirModal(id, nombre, fecha) {
+        document.getElementById('modal-alumno-id').value = id;
+        document.getElementById('modal-nombre-alumno').innerText = nombre;
+        document.getElementById('modal-fecha').value = fecha;
+        document.getElementById('modal-editar').classList.remove('hidden');
+    }
+
+    function cerrarModal() {
+        document.getElementById('modal-editar').classList.add('hidden');
+    }
+
+    function guardarFecha() {
+        const id = document.getElementById('modal-alumno-id').value;
+        const fecha = document.getElementById('modal-fecha').value;
+
+        fetch('/admin/actualizar_carnet', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id, fecha: fecha })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    cerrarModal();
+                    buscarAlumno(currentPage);
+                } else {
+                    alert('Error: ' + data.msg);
+                }
+            });
+    }
+
+    // Buscador con Enter
+    document.getElementById('input-busqueda').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') nuevaBusqueda();
+    });
+</script>
+{% endblock %}
