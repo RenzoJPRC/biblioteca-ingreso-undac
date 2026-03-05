@@ -1,93 +1,135 @@
 {% extends "layout_admin.html" %}
 
 {% block content %}
-    <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
+<header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
+    <div class="flex flex-col">
         <h2 class="text-lg font-bold text-slate-700">Resumen General</h2>
-        
-        <div class="flex gap-2">
-            <button onclick="window.location.reload()" class="bg-white border border-slate-300 text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-lg text-xs font-bold uppercase shadow-sm flex items-center gap-2 transition-colors">
-                <i class="ph ph-arrows-clockwise text-lg"></i>
-            </button>
+        <span class="text-xs text-blue-500 font-bold uppercase tracking-wide">{{ filtro_label }}</span>
+    </div>
 
-            <a href="/admin/reporte_hoy" class="flex items-center gap-2 bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-bold uppercase hover:bg-emerald-500">
-                <i class="ph ph-file-xls text-lg"></i> Reporte Hoy
+    <div class="flex gap-2">
+        <form method="GET" action="/admin/"
+            class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2 mr-2">
+            <input type="date" name="inicio" value="{{ params_inicio }}"
+                class="bg-transparent border-none text-xs text-slate-600 focus:ring-0 outline-none cursor-pointer p-2"
+                required>
+            <span class="text-slate-300 mx-1">al</span>
+            <input type="date" name="fin" value="{{ params_fin }}"
+                class="bg-transparent border-none text-xs text-slate-600 focus:ring-0 outline-none cursor-pointer p-2"
+                required>
+
+            <button type="submit"
+                class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase px-2 py-2 transition-colors">Filtrar</button>
+            {% if params_inicio %}
+            <a href="/admin/" class="text-slate-400 hover:text-rose-500 px-2 py-2 transition-colors"
+                title="Limpiar Filtros">
+                <i class="ph ph-x"></i>
             </a>
-            <button onclick="document.getElementById('modal-fechas').classList.remove('hidden')" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold uppercase hover:bg-blue-500">
-                <i class="ph ph-calendar"></i> Por Fechas
-            </button>
-        </div>
-    </header>
+            {% endif %}
+        </form>
 
-    <div class="flex-1 overflow-y-auto p-6 space-y-6">
-        
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 col-span-2 flex justify-between items-center">
-                <div>
-                    <p class="text-xs font-bold text-slate-400 uppercase">Total Ingresos</p>
-                    <h3 class="text-3xl font-bold text-slate-800">{{ total_hoy }}</h3>
-                </div>
-                <div class="text-right">
-                    <p class="text-xs text-orange-500 font-bold">{{ total_visitantes }} externos</p>
-                </div>
-            </div>
-            {% for i in range(1, 4) %}
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
-                <div>
-                    <p class="text-xs font-bold text-slate-400 uppercase">Piso {{ i }}</p>
-                    <h3 class="text-2xl font-bold text-slate-700">{{ pisos.get(i, 0) }}</h3>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+        <a href="/admin/reporte_hoy"
+            class="flex items-center gap-2 bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-bold uppercase hover:bg-emerald-500">
+            <i class="ph ph-file-xls text-lg"></i> Reporte Hoy
+        </a>
+        <button onclick="document.getElementById('modal-fechas').classList.remove('hidden')"
+            class="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold uppercase hover:bg-blue-500">
+            <i class="ph ph-calendar"></i> Exportar
+        </button>
+    </div>
+</header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-80">
-                <h3 class="text-sm font-bold text-slate-700 mb-4">Afluencia por Hora</h3>
-                <div class="relative h-64 w-full">
-                    <canvas id="chartHoras"></canvas>
-                </div>
+<div class="flex-1 overflow-y-auto p-6 space-y-6">
+
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div
+            class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 col-span-2 flex justify-between items-center">
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase">Total Ingresos</p>
+                <h3 class="text-3xl font-bold text-slate-800">{{ total_hoy }}</h3>
             </div>
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-80">
-                <h3 class="text-sm font-bold text-slate-700 mb-4">Top Orígenes</h3>
-                <div class="relative h-64 w-full">
-                    <canvas id="chartEscuelas"></canvas>
-                </div>
+            <div class="flex flex-col gap-1 text-right">
+                <span class="text-[10px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full inline-block">{{
+                    total_alumnos }} Alumnos</span>
+                <span
+                    class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full inline-block">{{
+                    total_egresados }} Egresados</span>
+                <span
+                    class="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full inline-block">{{
+                    total_visitantes }} Externos</span>
             </div>
         </div>
-        
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100"><h3 class="font-bold text-slate-700">Últimos Accesos</h3></div>
-            <table class="w-full text-left">
-                <thead class="bg-slate-50 text-xs uppercase text-slate-400 font-bold">
-                    <tr><th class="px-6 py-3">Hora</th><th class="px-6 py-3">Nombre</th><th class="px-6 py-3">Origen</th><th class="px-6 py-3 text-center">Piso</th></tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-sm">
-                    {% for reg in ultimos %}
-                    <tr>
-                        <td class="px-6 py-3 font-mono text-slate-500">{{ reg[2] }}</td>
-                        <td class="px-6 py-3 font-medium">{{ reg[0] }} {% if reg[4] == 'Visitante' %}<span class="text-[10px] bg-orange-100 text-orange-700 px-1 rounded ml-1">EXT</span>{% endif %}</td>
-                        <td class="px-6 py-3 text-slate-500">{{ reg[3] }}</td>
-                        <td class="px-6 py-3 text-center">{{ reg[1] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        {% for i in range(1, 4) %}
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
+            <div>
+                <p class="text-xs font-bold text-slate-400 uppercase">Piso {{ i }}</p>
+                <h3 class="text-2xl font-bold text-slate-700">{{ pisos.get(i, 0) }}</h3>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-80">
+            <h3 class="text-sm font-bold text-slate-700 mb-4">Afluencia por Hora</h3>
+            <div class="relative h-64 w-full">
+                <canvas id="chartHoras"></canvas>
+            </div>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-80">
+            <h3 class="text-sm font-bold text-slate-700 mb-4">Top Orígenes</h3>
+            <div class="relative h-64 w-full">
+                <canvas id="chartEscuelas"></canvas>
+            </div>
         </div>
     </div>
 
-    <div id="modal-fechas" class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm flex items-center justify-center z-50">
-        <div class="bg-white p-6 rounded-lg w-96">
-            <h3 class="font-bold mb-4">Descargar Reporte</h3>
-            <form id="form-fechas">
-                <input type="date" id="fecha-inicio" class="border w-full mb-2 p-2" required>
-                <input type="date" id="fecha-fin" class="border w-full mb-4 p-2" required>
-                <div class="flex justify-end gap-2">
-                    <button type="button" onclick="document.getElementById('modal-fechas').classList.add('hidden')" class="text-slate-500">Cancelar</button>
-                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Descargar</button>
-                </div>
-            </form>
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100">
+            <h3 class="font-bold text-slate-700">Últimos Accesos</h3>
         </div>
+        <table class="w-full text-left">
+            <thead class="bg-slate-50 text-xs uppercase text-slate-400 font-bold">
+                <tr>
+                    <th class="px-6 py-3">Hora</th>
+                    <th class="px-6 py-3">Nombre</th>
+                    <th class="px-6 py-3">Origen</th>
+                    <th class="px-6 py-3 text-center">Piso</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-sm">
+                {% for reg in ultimos %}
+                <tr>
+                    <td class="px-6 py-3 text-slate-500">
+                        <span class="block text-xs font-bold text-slate-400 mb-0.5">{{ reg[5] }}</span>
+                        <span class="font-mono text-[13px]">{{ reg[2] }}</span>
+                    </td>
+                    <td class="px-6 py-3 font-medium">{{ reg[0] }} {% if reg[4] == 'Visitante' %}<span
+                            class="text-[10px] bg-orange-100 text-orange-700 px-1 rounded ml-1">EXT</span>{% endif %}
+                    </td>
+                    <td class="px-6 py-3 text-slate-500">{{ reg[3] }}</td>
+                    <td class="px-6 py-3 text-center">{{ reg[1] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+</div>
+
+<div id="modal-fechas" class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg w-96">
+        <h3 class="font-bold mb-4">Descargar Reporte</h3>
+        <form id="form-fechas">
+            <input type="date" id="fecha-inicio" class="border w-full mb-2 p-2" required>
+            <input type="date" id="fecha-fin" class="border w-full mb-4 p-2" required>
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="document.getElementById('modal-fechas').classList.add('hidden')"
+                    class="text-slate-500">Cancelar</button>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Descargar</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -151,11 +193,11 @@
     }
 
     // REPORTE FECHAS
-    document.getElementById('form-fechas').addEventListener('submit', function(e) {
+    document.getElementById('form-fechas').addEventListener('submit', function (e) {
         e.preventDefault();
         const ini = document.getElementById('fecha-inicio').value;
         const fin = document.getElementById('fecha-fin').value;
-        if(ini && fin) {
+        if (ini && fin) {
             window.location.href = `/admin/reporte_rango?inicio=${ini}&fin=${fin}`;
             document.getElementById('modal-fechas').classList.add('hidden');
         } else {

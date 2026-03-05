@@ -1,0 +1,369 @@
+{% extends "layout_admin.html" %}
+
+{% block content %}
+<header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
+    <h2 class="text-lg font-bold text-slate-700">Gestión de Egresados</h2>
+    <button onclick="abrirModalNuevo()"
+        class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors shadow-sm">
+        <i class="ph ph-plus-circle text-lg"></i>
+        Nuevo Egresado
+    </button>
+</header>
+
+<div class="flex-1 overflow-y-auto p-6 space-y-4 flex flex-col h-full">
+
+    <!-- BUSCADOR -->
+    {% with
+    search_title="Buscar Egresado",
+    search_placeholder="Ingresa DNI, Código o Nombre...",
+    base_color="emerald"
+    %}
+    {% include "partials/_search_bar.html" %}
+    {% endwith %}
+
+    <!-- TABLA DE RESULTADOS -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col min-h-0"
+        id="contenedor-resultados">
+        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+            <h3 class="font-bold text-slate-700">Listado de Egresados</h3>
+            <span id="info-paginacion" class="text-xs text-slate-500 font-bold uppercase">Cargando...</span>
+        </div>
+
+        <div class="overflow-y-auto flex-1 relative">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-50 text-xs uppercase text-slate-400 font-bold sticky top-0 z-10 shadow-sm">
+                    <tr>
+                        <th class="px-6 py-3 bg-slate-50 border-b border-slate-200">Egresado</th>
+                        <th class="px-6 py-3 bg-slate-50 border-b border-slate-200">DNI / Código</th>
+                        <th class="px-6 py-3 bg-slate-50 border-b border-slate-200">Facultad / Escuela</th>
+                        <th class="px-6 py-3 bg-slate-50 border-b border-slate-200">Contacto</th>
+                        <th class="px-6 py-3 bg-slate-50 border-b border-slate-200">Estado</th>
+                        <th class="px-6 py-3 bg-slate-50 border-b border-slate-200 text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-sm" id="tabla-body">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- FOOTER PAGINACION -->
+        {% with base_color="emerald" %}
+        {% include "partials/_pagination_footer.html" %}
+        {% endwith %}
+    </div>
+</div>
+
+<!-- MODAL FORMULARIO EGRESADO -->
+<div id="modal-egresado"
+    class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-white p-8 rounded-xl w-full max-w-2xl shadow-2xl animate-scale-up max-h-[90vh] overflow-y-auto">
+        <h3 id="modal-titulo" class="font-bold mb-6 text-xl text-slate-800 flex items-center gap-2">
+            <i class="ph ph-graduation-cap text-emerald-600 text-2xl"></i>
+            <span>Nuevo Egresado</span>
+        </h3>
+
+        <form id="form-egresado" onsubmit="guardarEgresado(event)" class="space-y-4">
+            <input type="hidden" id="modal-id">
+
+            <!-- Fila 1 -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">DNI *</label>
+                    <input type="text" id="modal-dni" required
+                        class="border border-slate-300 w-full p-2.5 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Código de Matrícula *</label>
+                    <input type="text" id="modal-codigo" required
+                        class="border border-slate-300 w-full p-2.5 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                </div>
+            </div>
+
+            <!-- Fila 2 -->
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Apellidos y Nombres *</label>
+                <input type="text" id="modal-nombre" required
+                    class="border border-slate-300 w-full p-2.5 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder:text-slate-300"
+                    placeholder="Ej: Perez Garcia, Juan...">
+            </div>
+
+            <!-- Fila 3 -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Facultad *</label>
+                    <input type="text" id="modal-facultad" required
+                        class="border border-slate-300 w-full p-2.5 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Escuela Profesional *</label>
+                    <input type="text" id="modal-escuela" required
+                        class="border border-slate-300 w-full p-2.5 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                </div>
+            </div>
+
+            <hr class="border-slate-100 my-2">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Información de Contacto
+                (Opcional)</p>
+
+            <!-- Fila 4 -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Correo Personal</label>
+                    <input type="email" id="modal-correo"
+                        class="border border-slate-300 w-full p-2.5 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Correo Institucional</label>
+                    <input type="email" id="modal-correo-inst"
+                        class="border border-slate-300 w-full p-2.5 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                </div>
+            </div>
+
+            <!-- Fila 5 -->
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Celular</label>
+                <input type="text" id="modal-celular"
+                    class="border border-slate-300 w-full p-2.5 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+                <button type="button" onclick="cerrarModal()"
+                    class="text-slate-500 px-4 py-2 hover:bg-slate-100 rounded-lg font-medium transition-colors">Cancelar</button>
+                <button type="submit"
+                    class="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-500 font-bold transition-all shadow-lg shadow-emerald-600/20">
+                    <i class="ph ph-floppy-disk mr-1"></i> Guardar Egresado
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentPage = 1;
+    let totalPages = 1;
+
+    window.onload = function () {
+        buscarEgresado();
+    };
+
+    function buscarEgresado(pagina = 1) {
+        const query = document.getElementById('input-busqueda').value;
+        currentPage = pagina;
+
+        const url = `/admin/buscar_egresado?q=${query}&page=${currentPage}`;
+
+        const info = document.getElementById('info-paginacion');
+        info.innerText = "Cargando...";
+
+        fetch(url)
+            .then(res => res.json())
+            .then(resp => {
+                const tbody = document.getElementById('tabla-body');
+                tbody.innerHTML = '';
+
+                const data = resp.data;
+                const meta = resp.pagination;
+
+                currentPage = meta.page;
+                totalPages = meta.total_pages;
+
+                if (meta.total_items === 0) {
+                    info.innerText = "0 Resultados";
+                    tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-12 text-center text-slate-400 font-medium">No se encontraron egresados</td></tr>';
+                    actualizarControlesPaginacion();
+                    return;
+                }
+
+                info.innerText = `Mostrando ${data.length} de ${meta.total_items} egresados`;
+
+                data.forEach(egre => {
+                    const isActivo = egre.estado === 'ACTIVO';
+                    const estadoHtml = isActivo
+                        ? `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">ACTIVO</span>`
+                        : `<span class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">INACTIVO</span>`;
+
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition-colors group";
+                    tr.innerHTML = `
+                        <td class="px-6 py-3 font-medium text-slate-700 border-b border-slate-50">${egre.nombre}</td>
+                        <td class="px-6 py-3 border-b border-slate-50">
+                            <div class="text-slate-600 font-bold">${egre.dni}</div>
+                            <div class="text-xs text-slate-400 font-mono">${egre.codigo}</div>
+                        </td>
+                        <td class="px-6 py-3 border-b border-slate-50">
+                            <div class="text-slate-600 text-xs font-bold">${egre.facultad}</div>
+                            <div class="text-xs text-slate-400">${egre.escuela}</div>
+                        </td>
+                        <td class="px-6 py-3 border-b border-slate-50 text-xs">
+                            ${egre.celular ? `<div class="text-slate-600"><i class="ph ph-phone mr-1"></i>${egre.celular}</div>` : ''}
+                            ${egre.correo_personal ? `<div class="text-slate-400 truncate w-32" title="${egre.correo_personal}"><i class="ph ph-envelope mr-1"></i>${egre.correo_personal}</div>` : '<span class="text-slate-300 italic">Sin contacto</span>'}
+                        </td>
+                        <td class="px-6 py-3 border-b border-slate-50">${estadoHtml}</td>
+                        <td class="px-6 py-3 text-center border-b border-slate-50 flex justify-center gap-1">
+                            <button onclick='abrirModalEditar(${JSON.stringify(egre)})' 
+                                    class="text-slate-400 hover:text-emerald-600 p-2 rounded-full hover:bg-emerald-50 transition-all font-bold" title="Editar Egresado">
+                                <i class="ph ph-pencil-simple text-lg"></i>
+                            </button>
+                            <button onclick='eliminarEgresado(${egre.id}, "${egre.nombre}")' 
+                                    class="text-slate-400 hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition-all font-bold" title="Eliminar Egresado">
+                                <i class="ph ph-trash text-lg"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                actualizarControlesPaginacion();
+            })
+            .catch(err => console.error("Error cargando egresados:", err));
+    }
+
+    function actualizarControlesPaginacion() {
+        const btnPrev = document.getElementById('btn-prev');
+        const btnNext = document.getElementById('btn-next');
+        const select = document.getElementById('select-pagina');
+
+        btnPrev.disabled = currentPage <= 1;
+        btnNext.disabled = currentPage >= totalPages;
+
+        select.innerHTML = '';
+        let startPage = Math.max(1, currentPage - 10);
+        let endPage = Math.min(totalPages, currentPage + 10);
+
+        if (totalPages <= 20) {
+            startPage = 1; endPage = totalPages;
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.innerText = i;
+            if (i === currentPage) opt.selected = true;
+            select.appendChild(opt);
+        }
+    }
+
+    function cambiarPagina(delta) {
+        const nuevaPagina = currentPage + delta;
+        if (nuevaPagina >= 1 && nuevaPagina <= totalPages) {
+            buscarEgresado(nuevaPagina);
+        }
+    }
+
+    function irAPagina(pagina) {
+        buscarEgresado(parseInt(pagina));
+    }
+
+    function nuevaBusqueda() {
+        buscarEgresado(1);
+    }
+
+    document.getElementById('input-busqueda').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') nuevaBusqueda();
+    });
+
+    // --- MODALES Y CRUD ---
+
+    function abrirModalNuevo() {
+        document.getElementById('form-egresado').reset();
+        document.getElementById('modal-id').value = '';
+        document.getElementById('modal-titulo').innerHTML = '<i class="ph ph-graduation-cap text-emerald-600 text-2xl"></i><span>Nuevo Egresado</span>';
+        document.getElementById('modal-dni').readOnly = false;
+        document.getElementById('modal-codigo').readOnly = false;
+        document.getElementById('modal-egresado').classList.remove('hidden');
+    }
+
+    function abrirModalEditar(egresado) {
+        document.getElementById('modal-id').value = egresado.id;
+        document.getElementById('modal-nombre').value = egresado.nombre;
+        document.getElementById('modal-dni').value = egresado.dni;
+        document.getElementById('modal-codigo').value = egresado.codigo;
+        document.getElementById('modal-facultad').value = egresado.facultad;
+        document.getElementById('modal-escuela').value = egresado.escuela;
+        document.getElementById('modal-correo').value = egresado.correo_personal;
+        document.getElementById('modal-correo-inst').value = egresado.correo_inst;
+        document.getElementById('modal-celular').value = egresado.celular;
+
+        // Optionally make DNI read-only here if you don't want them changing it on edit
+        // document.getElementById('modal-dni').readOnly = true;
+
+        document.getElementById('modal-titulo').innerHTML = '<i class="ph ph-pencil-simple text-emerald-600 text-2xl"></i><span>Editar Egresado</span>';
+        document.getElementById('modal-egresado').classList.remove('hidden');
+    }
+
+    function cerrarModal() {
+        document.getElementById('modal-egresado').classList.add('hidden');
+    }
+
+    function guardarEgresado(e) {
+        e.preventDefault();
+
+        const payload = {
+            id: document.getElementById('modal-id').value,
+            nombre: document.getElementById('modal-nombre').value,
+            dni: document.getElementById('modal-dni').value,
+            codigo: document.getElementById('modal-codigo').value,
+            facultad: document.getElementById('modal-facultad').value,
+            escuela: document.getElementById('modal-escuela').value,
+            correo_personal: document.getElementById('modal-correo').value,
+            correo_inst: document.getElementById('modal-correo-inst').value,
+            celular: document.getElementById('modal-celular').value
+        };
+
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph ph-spinner animate-spin"></i> Guardando...';
+
+        fetch('/admin/guardar_egresado', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ph ph-floppy-disk mr-1"></i> Guardar Egresado';
+
+                if (data.status === 'success') {
+                    cerrarModal();
+                    buscarEgresado(currentPage); // Recargar
+                } else {
+                    alert('Error: ' + data.msg);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ph ph-floppy-disk mr-1"></i> Guardar Egresado';
+                alert('Error al conectar con el servidor.');
+            });
+    }
+
+    function eliminarEgresado(id, nombre) {
+        if (!confirm(`¿Estás SEGURO de eliminar permanentemente a "${nombre}"? Esta acción borrará también su historial de ingresos pasados si los tuviera.`)) {
+            return;
+        }
+
+        fetch(`/admin/eliminar_egresado/${id}`, {
+            method: 'DELETE'
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    buscarEgresado(currentPage); // Recargar la tabla
+                } else {
+                    alert('Error: ' + data.msg);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Error al conectar con el servidor.');
+            });
+    }
+
+</script>
+{% endblock %}
+```

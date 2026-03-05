@@ -8,17 +8,13 @@
 <div class="flex-1 overflow-y-auto p-6 space-y-4 flex flex-col h-full">
 
     <!-- BUSCADOR -->
-    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 shrink-0">
-        <h3 class="text-sm font-bold text-slate-500 uppercase mb-4">Buscar Alumno</h3>
-        <div class="flex gap-4">
-            <input type="text" id="input-busqueda" placeholder="Ingresa DNI, Código o Nombre..."
-                class="flex-1 border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-500 outline-none">
-            <button onclick="nuevaBusqueda()"
-                class="bg-sky-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-sky-500 transition-colors">
-                <i class="ph ph-magnifying-glass text-lg align-middle"></i> Buscar
-            </button>
-        </div>
-    </div>
+    {% with
+    search_title="Buscar Alumno",
+    search_placeholder="Ingresa DNI, Código o Nombre...",
+    base_color="sky"
+    %}
+    {% include "partials/_search_bar.html" %}
+    {% endwith %}
 
     <!-- BARRA DE ACCIONES MASIVAS (Oculta por defecto) -->
     <div id="barra-acciones"
@@ -74,24 +70,9 @@
         </div>
 
         <!-- FOOTER PAGINACION -->
-        <div class="px-6 py-3 border-t border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
-            <button onclick="cambiarPagina(-1)" id="btn-prev"
-                class="flex items-center gap-1 text-slate-500 hover:text-sky-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm transition-colors">
-                <i class="ph ph-caret-left text-lg"></i> Anterior
-            </button>
-
-            <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-slate-400 uppercase">Página</span>
-                <select id="select-pagina" onchange="irAPagina(this.value)"
-                    class="bg-white border border-slate-300 text-slate-700 text-xs rounded px-2 py-1 outline-none focus:border-sky-500 font-bold">
-                </select>
-            </div>
-
-            <button onclick="cambiarPagina(1)" id="btn-next"
-                class="flex items-center gap-1 text-slate-500 hover:text-sky-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm transition-colors">
-                Siguiente <i class="ph ph-caret-right text-lg"></i>
-            </button>
-        </div>
+        {% with base_color="sky" %}
+        {% include "partials/_pagination_footer.html" %}
+        {% endwith %}
     </div>
 </div>
 
