@@ -57,6 +57,9 @@
                 <span
                     class="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full inline-block">{{
                     total_visitantes }} Externos</span>
+                <span
+                    class="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full inline-block">{{
+                    total_personal }} Trabajadores</span>
             </div>
         </div>
         {% for i in range(1, 4) %}
@@ -106,6 +109,8 @@
                     </td>
                     <td class="px-6 py-3 font-medium">{{ reg[0] }} {% if reg[4] == 'Visitante' %}<span
                             class="text-[10px] bg-orange-100 text-orange-700 px-1 rounded ml-1">EXT</span>{% endif %}
+                        {% if reg[4] == 'Administrativo' %}<span
+                            class="text-[10px] bg-purple-100 text-purple-700 px-1 rounded ml-1">ADM</span>{% endif %}
                     </td>
                     <td class="px-6 py-3 text-slate-500">{{ reg[3] }}</td>
                     <td class="px-6 py-3 text-center">{{ reg[1] }}</td>
@@ -134,75 +139,24 @@
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 
 <script>
-    // DATOS DE FLASK
-    const labelsHoras = {{ labels_horas | tojson }};
-    const dataHoras = {{ data_horas | tojson }};
-    const labelsOrigenes = {{ labels_escuelas | tojson }};
-    const dataOrigenes = {{ data_escuelas | tojson }};
+    document.addEventListener("DOMContentLoaded", function () {
+        // DATOS DE FLASK
+        const labelsHoras = {{ labels_horas | tojson | safe
+    }};
+    const dataHoras = {{ data_horas | tojson | safe }};
+    const labelsOrigenes = {{ labels_escuelas | tojson | safe }};
+    const dataOrigenes = {{ data_escuelas | tojson | safe }};
 
-    // GRÁFICO HORAS
-    const ctxHoras = document.getElementById('chartHoras');
-    if (ctxHoras) {
-        new Chart(ctxHoras, {
-            type: 'line',
-            data: {
-                labels: labelsHoras,
-                datasets: [{
-                    label: 'Ingresos',
-                    data: dataHoras,
-                    borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.3,
-                    fill: true,
-                    pointRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-            }
-        });
-    }
+    // INICIALIZACIÓN DE MÓDULOS DE DASHBOARD.JS
+    inicializarGraficos(labelsHoras, dataHoras, labelsOrigenes, dataOrigenes);
+    inicializarFormularioRangoFechas();
 
-    // GRÁFICO ORÍGENES
-    const ctxEscuelas = document.getElementById('chartEscuelas');
-    if (ctxEscuelas) {
-        new Chart(ctxEscuelas, {
-            type: 'bar',
-            data: {
-                labels: labelsOrigenes,
-                datasets: [{
-                    label: 'Cantidad',
-                    data: dataOrigenes,
-                    backgroundColor: ['#f97316', '#3b82f6', '#10b981', '#8b5cf6', '#f43f5e'],
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { ticks: { autoSkip: false } } }
-            }
-        });
-    }
-
-    // REPORTE FECHAS
-    document.getElementById('form-fechas').addEventListener('submit', function (e) {
-        e.preventDefault();
-        const ini = document.getElementById('fecha-inicio').value;
-        const fin = document.getElementById('fecha-fin').value;
-        if (ini && fin) {
-            window.location.href = `/admin/reporte_rango?inicio=${ini}&fin=${fin}`;
-            document.getElementById('modal-fechas').classList.add('hidden');
-        } else {
-            alert("Selecciona ambas fechas.");
-        }
+    // AUTO-REFRESH SÓLO EN "DATOS DE HOY"
+    const isToday = "{{ 'true' if not params_inicio and not params_fin else 'false' }}";
+    inicializarAutoRefresh(isToday);
     });
 </script>
 {% endblock %}

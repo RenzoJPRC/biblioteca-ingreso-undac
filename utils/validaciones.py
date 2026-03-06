@@ -40,7 +40,15 @@ def verificar_dni_global(dni, ignora_tabla=None, ignora_id=None):
         else:
             cursor.execute("SELECT 1 FROM Visitantes WHERE DNI = ?", (dni,))
         if cursor.fetchone():
-            return True, "Este DNI ya está registrado como Visitante / Personal Externo."
+            return True, "Este DNI ya está registrado como Visitante / Externo."
+
+        # 4. Verificar en Personal Administrativo
+        if ignora_tabla == 'PersonalAdministrativo' and ignora_id:
+            cursor.execute("SELECT 1 FROM PersonalAdministrativo WHERE DNI = ? AND PersonalID != ?", (dni, ignora_id))
+        else:
+            cursor.execute("SELECT 1 FROM PersonalAdministrativo WHERE DNI = ?", (dni,))
+        if cursor.fetchone():
+            return True, "Este DNI ya está registrado como Personal Administrativo."
 
         return False, None
         

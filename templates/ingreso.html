@@ -27,8 +27,12 @@
 </head>
 
 <body
-    class="bg-slate-950 text-white h-screen flex flex-col items-center justify-center overflow-hidden font-sans select-none"
+    class="bg-slate-950 text-white h-screen flex flex-col items-center justify-center overflow-hidden font-sans select-none relative"
     onclick="focarInput()">
+
+    <!-- GLOW AMBIENTAL -->
+    <div id="glow-overlay" class="fixed inset-0 pointer-events-none transition-all duration-700 z-50 bg-transparent">
+    </div>
 
     <div class="absolute top-10 left-10">
         <h1 class="text-3xl font-bold tracking-widest text-sky-500">UNDAC</h1>
@@ -129,10 +133,13 @@
             txtEstado.className = "text-5xl font-bold mb-4";
             msgExtra.classList.add('hidden'); // Ocultar por defecto
 
+            const glow = document.getElementById('glow-overlay');
+
             // --- LÓGICA DE VISUALIZACIÓN ---
 
             const esEgresado = data.semestre && data.semestre.toUpperCase() === 'EGRESADO';
             const esVisitante = data.semestre && data.semestre.toUpperCase() === 'VISITANTE';
+            const esAdministrativo = data.semestre && data.semestre.toUpperCase() === 'ADMINISTRATIVO';
 
             if (data.status === 'success') {
                 // VERDE, ORO o NARANJA: Acceso Correcto
@@ -141,12 +148,19 @@
                 if (esEgresado) {
                     txtEstado.classList.add("text-amber-400");
                     icono.innerHTML = `<svg class="w-32 h-32 text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.6)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    glow.className = "fixed inset-0 pointer-events-none transition-all duration-300 z-50 shadow-[inset_0_0_250px_rgba(251,191,36,0.25)] bg-amber-500/5";
                 } else if (esVisitante) {
                     txtEstado.classList.add("text-orange-400");
                     icono.innerHTML = `<svg class="w-32 h-32 text-orange-400 drop-shadow-[0_0_15px_rgba(251,146,60,0.6)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    glow.className = "fixed inset-0 pointer-events-none transition-all duration-300 z-50 shadow-[inset_0_0_250px_rgba(251,146,60,0.25)] bg-orange-500/5";
+                } else if (esAdministrativo) {
+                    txtEstado.classList.add("text-fuchsia-400");
+                    icono.innerHTML = `<svg class="w-32 h-32 text-fuchsia-400 drop-shadow-[0_0_15px_rgba(232,121,249,0.6)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    glow.className = "fixed inset-0 pointer-events-none transition-all duration-300 z-50 shadow-[inset_0_0_250px_rgba(232,121,249,0.25)] bg-fuchsia-500/5";
                 } else {
                     txtEstado.classList.add("text-emerald-400");
                     icono.innerHTML = `<svg class="w-32 h-32 text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    glow.className = "fixed inset-0 pointer-events-none transition-all duration-300 z-50 shadow-[inset_0_0_250px_rgba(16,185,129,0.25)] bg-emerald-500/5";
                 }
 
                 // Verificar advertencia de carnet
@@ -162,6 +176,7 @@
                 txtEstado.innerText = data.msg; // "YA REGISTRADO..."
                 txtEstado.classList.add("text-yellow-400");
                 icono.innerHTML = `<svg class="w-32 h-32 text-yellow-500 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+                glow.className = "fixed inset-0 pointer-events-none transition-all duration-300 z-50 shadow-[inset_0_0_350px_rgba(234,179,8,0.4)] bg-yellow-500/10";
 
                 // Mostrar Datos (Esto es lo que pediste)
                 llenarDatos(data);
@@ -171,6 +186,7 @@
                 txtEstado.innerText = data.msg || "No Registrado";
                 txtEstado.classList.add("text-rose-500");
                 icono.innerHTML = `<svg class="w-32 h-32 text-rose-500 drop-shadow-[0_0_15px_rgba(244,63,94,0.5)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                glow.className = "fixed inset-0 pointer-events-none transition-all duration-300 z-50 shadow-[inset_0_0_350px_rgba(244,63,94,0.5)] bg-rose-500/10";
 
                 // Ocultar caja de datos
                 boxDatos.classList.add('hidden');
@@ -182,6 +198,7 @@
                 resultado.classList.add('hidden');
                 espera.classList.remove('hidden');
                 resultado.classList.remove('fade-in');
+                glow.className = "fixed inset-0 pointer-events-none transition-all duration-700 z-50 bg-transparent";
             }, 4000); // 4 segundos
         }
 
@@ -193,10 +210,10 @@
             document.getElementById('escuela-alumno').innerText = data.escuela || "Externo";
 
             const sem = document.getElementById('semestre-alumno');
-            if (data.semestre && data.semestre !== 'EXTERNO' && data.semestre !== 'VISITANTE' && data.semestre !== 'EGRESADO') {
+            if (data.semestre && data.semestre !== 'EXTERNO' && data.semestre !== 'VISITANTE' && data.semestre !== 'EGRESADO' && data.semestre !== 'ADMINISTRATIVO') {
                 sem.innerText = "Semestre " + data.semestre;
                 sem.style.display = 'inline';
-            } else if (data.semestre === 'VISITANTE' || data.semestre === 'EGRESADO') {
+            } else if (data.semestre === 'VISITANTE' || data.semestre === 'EGRESADO' || data.semestre === 'ADMINISTRATIVO') {
                 sem.innerText = data.semestre;
                 sem.style.display = 'inline';
             } else {
