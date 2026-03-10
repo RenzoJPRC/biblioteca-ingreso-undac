@@ -35,18 +35,67 @@
             <p class="text-slate-500 text-sm font-medium">Universidad Nacional Daniel Alcides Carrión</p>
         </div>
 
-        <!-- TWO COLUMNS GRID -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+        <!-- MAIN MENU GRID (3 BUTTONS) -->
+        <div id="main-menu" class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full transition-all duration-300">
+            <!-- COLUMN 1: CENTRAL BOTÓN -->
+            <button onclick="toggleMenu('central-menu')"
+                class="group flex flex-col items-center justify-center p-8 bg-sky-50/50 rounded-2xl border border-sky-100 hover:bg-sky-600 hover:border-sky-600 transition-all shadow-sm hover:shadow-xl hover:-translate-y-1">
+                <div class="p-4 bg-white rounded-full mb-4 shadow-sm group-hover:bg-sky-500 transition-colors">
+                    <i class="ph-fill ph-buildings text-4xl text-sky-500 group-hover:text-white transition-colors"></i>
+                </div>
+                <h2
+                    class="text-sky-800 font-bold uppercase tracking-wider text-sm group-hover:text-white transition-colors">
+                    Sede Central</h2>
+            </button>
 
-            <!-- COLUMN 1: CENTRAL / PISOS -->
-            <div
-                class="bg-sky-50/50 p-6 rounded-2xl border border-sky-100 flex flex-col justify-center h-full shadow-sm hover:shadow-md transition-shadow">
+            <!-- COLUMN 2: FILIALES BOTÓN -->
+            <button onclick="toggleMenu('filial-menu')"
+                class="group flex flex-col items-center justify-center p-8 bg-emerald-50/50 rounded-2xl border border-emerald-100 hover:bg-emerald-600 hover:border-emerald-600 transition-all shadow-sm hover:shadow-xl hover:-translate-y-1">
+                <div class="p-4 bg-white rounded-full mb-4 shadow-sm group-hover:bg-emerald-500 transition-colors">
+                    <i
+                        class="ph-fill ph-map-pin text-4xl text-emerald-500 group-hover:text-white transition-colors"></i>
+                </div>
+                <h2
+                    class="text-emerald-800 font-bold uppercase tracking-wider text-sm group-hover:text-white transition-colors">
+                    Filiales</h2>
+            </button>
+
+            <!-- COLUMN 3: ADMIN PANEL -->
+            <a href="/admin"
+                class="group relative overflow-hidden bg-slate-800 rounded-2xl p-6 flex flex-col items-center justify-center gap-4 text-center hover:bg-slate-900 transition-all shadow-lg hover:shadow-xl hover:-translate-y-1 border border-slate-700">
+                <!-- Decorative Icon Background -->
+                <i
+                    class="ph-fill ph-shield-check text-9xl absolute text-slate-700/20 -bottom-8 -right-8 group-hover:text-slate-600/30 transition-all duration-500"></i>
+
+                <div
+                    class="p-6 bg-slate-700/50 rounded-full group-hover:bg-slate-600/50 transition-colors backdrop-blur-sm z-10 hidden md:block">
+                    <i
+                        class="ph-fill ph-user-gear text-5xl text-sky-400 group-hover:text-sky-300 transition-colors"></i>
+                </div>
+
+                <div class="z-10">
+                    <h2 class="text-xl md:text-2xl font-bold text-white mb-1">Panel Administrador</h2>
+                    <p class="text-slate-400 text-xs md:text-sm group-hover:text-slate-300 transition-colors">Gestión y
+                        Reportes</p>
+                </div>
+
+                <div
+                    class="mt-2 md:mt-4 px-6 py-2 rounded-full border border-slate-600 text-slate-300 text-xs font-bold uppercase tracking-widest group-hover:bg-sky-600 group-hover:border-sky-600 group-hover:text-white transition-all z-10 w-max mx-auto">
+                    Acceder <i class="ph-bold ph-arrow-right inline-block ml-1"></i>
+                </div>
+            </a>
+        </div>
+
+        <!-- SUB MENU CENTRAL -->
+        <div id="central-menu" class="hidden w-full transition-all duration-300 animate-fade-in-up">
+            <button onclick="toggleMenu('main-menu')"
+                class="mb-4 text-sm text-slate-500 hover:text-sky-600 font-bold flex items-center gap-1 transition-colors"><i
+                    class="ph-bold ph-arrow-left"></i> Volver al Menú Principal</button>
+            <div class="bg-sky-50/50 p-6 rounded-2xl border border-sky-100 shadow-sm">
                 <h2 class="text-sky-800 font-bold uppercase tracking-wider text-sm mb-4 flex items-center gap-2">
-                    <i class="ph-fill ph-buildings text-lg"></i>
-                    Accesos Central
+                    <i class="ph-fill ph-buildings text-lg"></i> Accesos Sede Central
                 </h2>
-
-                <div class="space-y-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Piso 1 -->
                     <a href="/piso1"
                         class="group flex items-center justify-between p-4 bg-white border border-sky-200 rounded-xl hover:bg-sky-600 hover:text-white hover:border-sky-600 transition-all duration-300 shadow-sm">
@@ -57,56 +106,73 @@
                         </div>
                         <i class="ph-bold ph-caret-right text-slate-300 group-hover:text-white transition-colors"></i>
                     </a>
-
                     <!-- Piso 2 -->
                     <a href="/piso2"
-                        class="group flex items-center justify-between p-4 bg-white border border-emerald-200 rounded-xl hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-300 shadow-sm">
+                        class="group flex items-center justify-between p-4 bg-white border border-sky-200 rounded-xl hover:bg-sky-600 hover:text-white hover:border-sky-600 transition-all duration-300 shadow-sm">
                         <div class="flex items-center gap-3">
                             <span
-                                class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-sm group-hover:bg-white/20 group-hover:text-white transition-colors">2</span>
+                                class="w-8 h-8 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center font-bold text-sm group-hover:bg-white/20 group-hover:text-white transition-colors">2</span>
                             <span class="font-bold text-lg text-slate-700 group-hover:text-white">Piso 2</span>
                         </div>
                         <i class="ph-bold ph-caret-right text-slate-300 group-hover:text-white transition-colors"></i>
                     </a>
-
                     <!-- Piso 3 -->
                     <a href="/piso3"
-                        class="group flex items-center justify-between p-4 bg-white border border-violet-200 rounded-xl hover:bg-violet-600 hover:text-white hover:border-violet-600 transition-all duration-300 shadow-sm">
+                        class="group flex items-center justify-between p-4 bg-white border border-sky-200 rounded-xl hover:bg-sky-600 hover:text-white hover:border-sky-600 transition-all duration-300 shadow-sm">
                         <div class="flex items-center gap-3">
                             <span
-                                class="w-8 h-8 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center font-bold text-sm group-hover:bg-white/20 group-hover:text-white transition-colors">3</span>
+                                class="w-8 h-8 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center font-bold text-sm group-hover:bg-white/20 group-hover:text-white transition-colors">3</span>
                             <span class="font-bold text-lg text-slate-700 group-hover:text-white">Piso 3</span>
                         </div>
                         <i class="ph-bold ph-caret-right text-slate-300 group-hover:text-white transition-colors"></i>
                     </a>
+                    <!-- Evento -->
+                    <a href="#" id="btn-evento"
+                        class="group flex items-center justify-between p-4 bg-slate-100 border border-slate-200 rounded-xl transition-all duration-300 shadow-sm opacity-60 cursor-not-allowed pointer-events-none relative overflow-hidden">
+                        <div class="flex items-center gap-3 relative z-10">
+                            <span id="evento-icon"
+                                class="w-8 h-8 rounded-full bg-slate-200 text-slate-400 flex items-center justify-center font-bold text-sm transition-colors"><i
+                                    class="ph-bold ph-ticket"></i></span>
+                            <div class="flex flex-col text-left">
+                                <span class="font-bold text-lg text-slate-500 transition-colors"
+                                    id="evento-title">Evento</span>
+                                <span class="text-xs text-slate-400 font-medium transition-colors"
+                                    id="evento-desc">Ningún evento programado</span>
+                            </div>
+                        </div>
+                        <i class="ph-bold ph-lock-key text-slate-400 relative z-10 transition-colors"
+                            id="evento-arrow"></i>
+                    </a>
                 </div>
             </div>
+        </div>
 
-            <!-- COLUMN 2: ADMIN PANEL -->
-            <a href="/admin"
-                class="group relative overflow-hidden bg-slate-800 rounded-2xl p-6 flex flex-col items-center justify-center gap-4 text-center hover:bg-slate-900 transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] border border-slate-700">
-                <!-- Decorative Icon Background -->
-                <i
-                    class="ph-fill ph-shield-check text-9xl absolute text-slate-700/20 -bottom-8 -right-8 group-hover:text-slate-600/30 transition-all duration-500"></i>
-
-                <div
-                    class="p-6 bg-slate-700/50 rounded-full group-hover:bg-slate-600/50 transition-colors backdrop-blur-sm z-10">
-                    <i
-                        class="ph-fill ph-user-gear text-5xl text-sky-400 group-hover:text-sky-300 transition-colors"></i>
+        <!-- SUB MENU FILIALES -->
+        <div id="filial-menu" class="hidden w-full transition-all duration-300 animate-fade-in-up">
+            <button onclick="toggleMenu('main-menu')"
+                class="mb-4 text-sm text-slate-500 hover:text-emerald-600 font-bold flex items-center gap-1 transition-colors"><i
+                    class="ph-bold ph-arrow-left"></i> Volver al Menú Principal</button>
+            <div class="bg-emerald-50/50 p-6 rounded-2xl border border-emerald-100 shadow-sm">
+                <h2 class="text-emerald-800 font-bold uppercase tracking-wider text-sm mb-4 flex items-center gap-2">
+                    <i class="ph-fill ph-map-pin text-lg"></i> Accesos Filiales
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Filiales: La Merced, Oxapampa, Paucartambo, Yanahuanca, Tarma -->
+                    {% set filiales = ['La Merced', 'Oxapampa', 'Paucartambo', 'Yanahuanca', 'Tarma'] %}
+                    {% for filial in filiales %}
+                    <a href="/filial/{{ filial }}"
+                        class="group flex items-center justify-between p-4 bg-white border border-emerald-200 rounded-xl hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-300 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <span
+                                class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-sm group-hover:bg-white/20 group-hover:text-white transition-colors"><i
+                                    class="ph-fill ph-buildings"></i></span>
+                            <span class="font-bold text-md text-slate-700 group-hover:text-white">{{ filial }}</span>
+                        </div>
+                        <i class="ph-bold ph-caret-right text-slate-300 group-hover:text-white transition-colors"></i>
+                    </a>
+                    {% endfor %}
                 </div>
-
-                <div class="z-10">
-                    <h2 class="text-2xl font-bold text-white mb-1">Panel Administrador</h2>
-                    <p class="text-slate-400 text-sm group-hover:text-slate-300 transition-colors">Gestión y Reportes
-                    </p>
-                </div>
-
-                <div
-                    class="mt-4 px-6 py-2 rounded-full border border-slate-600 text-slate-300 text-xs font-bold uppercase tracking-widest group-hover:bg-sky-600 group-hover:border-sky-600 group-hover:text-white transition-all z-10">
-                    Acceder <i class="ph-bold ph-arrow-right inline-block ml-1"></i>
-                </div>
-            </a>
-
+            </div>
         </div>
 
         <!-- FOOTER -->
@@ -131,7 +197,112 @@
         .animate-fade-in-up {
             animation: fadeInUp 0.6s ease-out forwards;
         }
+
+        @keyframes pulse-evento {
+
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+
+            50% {
+                transform: scale(1.02);
+                box-shadow: 0 0 15px 5px rgba(239, 68, 68, 0.2);
+            }
+        }
+
+        .evento-activo-anim {
+            animation: pulse-evento 2s infinite ease-in-out;
+            border-color: #ef4444 !important;
+            /* rose-500 */
+        }
+
+        .evento-activo-anim:hover {
+            animation: none;
+            background-color: #ef4444 !important;
+            border-color: #ef4444 !important;
+        }
     </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            verificarEventoActivo();
+            // Verificar cada minuto (60000ms)
+            setInterval(verificarEventoActivo, 60000);
+        });
+
+        function toggleMenu(menuId) {
+            const main = document.getElementById('main-menu');
+            const central = document.getElementById('central-menu');
+            const filial = document.getElementById('filial-menu');
+
+            // Ocultar todos
+            main.classList.add('hidden');
+            central.classList.add('hidden');
+            filial.classList.add('hidden');
+
+            // Mostrar el solicitado
+            const activeMenu = document.getElementById(menuId);
+            activeMenu.classList.remove('hidden');
+        }
+
+        function verificarEventoActivo() {
+            fetch('/api/eventos_activos')
+                .then(response => response.json())
+                .then(data => {
+                    const btn = document.getElementById('btn-evento');
+                    const iconSpan = document.getElementById('evento-icon');
+                    const titleDiv = document.getElementById('evento-title');
+                    const descDiv = document.getElementById('evento-desc');
+                    const arrowIcon = document.getElementById('evento-arrow');
+
+                    if (data.status === 'success' && data.evento_activo) {
+                        // ACTIVAR BOTÓN EVENTO
+                        const eventoId = data.evento.id;
+                        const eventoNombre = data.evento.nombre;
+
+                        btn.href = `/evento/${eventoId}`;
+
+                        // Quitar estado deshabilitado
+                        btn.classList.remove('opacity-60', 'cursor-not-allowed', 'pointer-events-none', 'bg-slate-100', 'border-slate-200');
+                        btn.classList.add('bg-white', 'evento-activo-anim', 'group-hover:text-white', 'cursor-pointer', 'opacity-100');
+
+                        // Cambiar colores del ícono interior
+                        iconSpan.className = "w-8 h-8 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-sm transition-colors group-hover:bg-white/20 group-hover:text-white";
+
+                        // Cambiar textos
+                        titleDiv.className = "font-bold text-lg text-slate-700 transition-colors group-hover:text-white";
+                        titleDiv.innerText = "Ingreso Evento";
+
+                        descDiv.className = "text-xs text-rose-500 font-bold uppercase tracking-wider transition-colors group-hover:text-white/80";
+                        descDiv.innerText = eventoNombre;
+
+                        // Cambiar ícono del candado a flecha
+                        arrowIcon.className = "ph-bold ph-caret-right text-rose-400 group-hover:text-white transition-colors text-xl";
+
+                    } else {
+                        // DESACTIVAR / MANTENER DESACTIVADO
+                        btn.href = "#";
+
+                        // Restaurar estado deshabilitado
+                        btn.classList.add('opacity-60', 'cursor-not-allowed', 'pointer-events-none', 'bg-slate-100', 'border-slate-200');
+                        btn.classList.remove('bg-white', 'evento-activo-anim', 'group-hover:text-white', 'cursor-pointer', 'opacity-100');
+
+                        iconSpan.className = "w-8 h-8 rounded-full bg-slate-200 text-slate-400 flex items-center justify-center font-bold text-sm transition-colors";
+
+                        titleDiv.className = "font-bold text-lg text-slate-500 transition-colors";
+                        titleDiv.innerText = "Evento Especial";
+
+                        descDiv.className = "text-xs text-slate-400 font-medium transition-colors";
+                        descDiv.innerText = "Ningún evento activo";
+
+                        arrowIcon.className = "ph-bold ph-lock-key text-slate-400 transition-colors";
+                    }
+                })
+                .catch(error => console.error("Error al consultar evento:", error));
+        }
+    </script>
 </body>
 
 </html>

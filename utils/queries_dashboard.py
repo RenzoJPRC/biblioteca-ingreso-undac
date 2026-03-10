@@ -29,9 +29,12 @@ def obtener_datos_dashboard(f_inicio, f_fin):
     cursor.execute(f"SELECT COUNT(*) FROM RegistroIngresos WHERE PersonalID IS NOT NULL AND {date_where}", date_params)
     total_personal = cursor.fetchone()[0]
 
-    # 2. Por Piso
-    cursor.execute(f"SELECT Piso, COUNT(*) FROM RegistroIngresos WHERE {date_where} GROUP BY Piso", date_params)
+    # 2. Por Piso y Sede
+    cursor.execute(f"SELECT Piso, COUNT(*) FROM RegistroIngresos WHERE Sede='Central' AND {date_where} GROUP BY Piso", date_params)
     pisos_dict = {row[0]: row[1] for row in cursor.fetchall()}
+
+    cursor.execute(f"SELECT Sede, COUNT(*) FROM RegistroIngresos WHERE Sede!='Central' AND {date_where} GROUP BY Sede", date_params)
+    sedes_dict = {row[0]: row[1] for row in cursor.fetchall()}
 
     # 3. Gráfico Horas
     cursor.execute(f"""
@@ -76,7 +79,8 @@ def obtener_datos_dashboard(f_inicio, f_fin):
                 WHEN R.PersonalID IS NOT NULL THEN 'Administrativo'
                 ELSE 'Alumno' 
             END,
-            FORMAT(R.FechaHora, 'dd/MM/yyyy')
+            FORMAT(R.FechaHora, 'dd/MM/yyyy'),
+            ISNULL(R.Sede, 'Central')
         FROM RegistroIngresos R
         LEFT JOIN Alumnos A ON R.AlumnoID = A.AlumnoID
         LEFT JOIN Visitantes V ON R.VisitanteID = V.VisitanteID
@@ -95,7 +99,8 @@ def obtener_datos_dashboard(f_inicio, f_fin):
             'hora': row[2],
             'origen': row[3],
             'tipo': row[4],
-            'fecha': row[5]
+            'fecha': row[5],
+            'sede': row[6]
         })
         
     conn.close()
@@ -107,6 +112,7 @@ def obtener_datos_dashboard(f_inicio, f_fin):
         'total_egresados': total_egresados,
         'total_personal': total_personal,
         'pisos': pisos_dict,
+        'sedes': sedes_dict,
         'chart_horas_labels': chart_horas_labels,
         'chart_horas_values': chart_horas_values,
         'chart_escuelas_labels': chart_escuelas_labels,

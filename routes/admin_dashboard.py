@@ -18,6 +18,7 @@ def admin_dashboard():
                            total_egresados=dash_data['total_egresados'], 
                            total_personal=dash_data['total_personal'],
                            pisos=dash_data['pisos'], 
+                           sedes=dash_data['sedes'],
                            ultimos=dash_data['ultimos_crudos'], 
                            labels_horas=dash_data['chart_horas_labels'], 
                            data_horas=dash_data['chart_horas_values'], 
@@ -39,5 +40,6 @@ def api_dashboard_data():
         'total_egresados': dash_data['total_egresados'],
         'total_personal': dash_data['total_personal'],
         'pisos': dash_data['pisos'],
+        'sedes': dash_data['sedes'],
         'ultimos': dash_data['ultimos']
     }

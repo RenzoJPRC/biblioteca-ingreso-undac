@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify
 from db import get_db_connection
+from utils.queries_eventos import obtener_evento_activo_actual, procesar_ingreso_evento, verificar_estado_evento
 
 # Definimos el Blueprint
 ingreso_bp = Blueprint('ingreso', __name__)
@@ -9,13 +10,16 @@ def index():
     return render_template('index.html')
 
 @ingreso_bp.route('/piso1')
-def piso1(): return render_template('ingreso.html', piso=1)
+def piso1(): return render_template('ingreso.html', piso=1, sede='Central')
 
 @ingreso_bp.route('/piso2')
-def piso2(): return render_template('ingreso.html', piso=2)
+def piso2(): return render_template('ingreso.html', piso=2, sede='Central')
 
 @ingreso_bp.route('/piso3')
-def piso3(): return render_template('ingreso.html', piso=3)
+def piso3(): return render_template('ingreso.html', piso=3, sede='Central')
+
+@ingreso_bp.route('/filial/<sede>')
+def filial(sede): return render_template('ingreso.html', piso=1, sede=sede)
 
 # API: PROCESAR EL ESCANEO
 @ingreso_bp.route('/procesar_ingreso', methods=['POST'])
@@ -23,6 +27,7 @@ def procesar_ingreso():
     data = request.json
     codigo = data.get('codigo')
     piso = data.get('piso')
+    sede = data.get('sede', 'Central')
 
     if not codigo: return jsonify({'status': 'error', 'msg': 'Código vacío'})
 
@@ -38,11 +43,11 @@ def procesar_ingreso():
         DECLARE @out_semestre varchar(20);
         
         -- Ejecutamos el procedimiento y capturamos los datos de salida
-        EXEC sp_RegistrarIngreso ?, ?, @out_msg OUTPUT, @out_nombre OUTPUT, @out_escuela OUTPUT, @out_semestre OUTPUT;
+        EXEC sp_RegistrarIngreso ?, ?, ?, @out_msg OUTPUT, @out_nombre OUTPUT, @out_escuela OUTPUT, @out_semestre OUTPUT;
         
         SELECT @out_msg, @out_nombre, @out_escuela, @out_semestre;
         """
-        cursor.execute(sql, (codigo, piso))
+        cursor.execute(sql, (codigo, piso, sede))
         row = cursor.fetchone()
         conn.commit()
         conn.close()
@@ -88,3 +93,33 @@ def procesar_ingreso():
 
     except Exception as e:
         return jsonify({'status': 'error', 'msg': str(e)})
+
+# --- RUTAS DE EVENTOS ---
+@ingreso_bp.route('/api/eventos_activos', methods=['GET'])
+def api_eventos_activos():
+    evento = obtener_evento_activo_actual()
+    if evento:
+        return jsonify({'status': 'success', 'evento_activo': True, 'evento': evento})
+    return jsonify({'status': 'success', 'evento_activo': False})
+
+@ingreso_bp.route('/api/evento_estado/<int:evento_id>', methods=['GET'])
+def api_evento_estado(evento_id):
+    estado = verificar_estado_evento(evento_id)
+    return jsonify(estado)
+
+@ingreso_bp.route('/evento/<int:evento_id>')
+def ingreso_evento(evento_id):
+    # Renderizamos la misma plantilla pero pasamos el ID del evento 
+    return render_template('ingreso.html', piso="EVENTO", sede="Central", evento_id=evento_id)
+
+@ingreso_bp.route('/procesar_evento_ingreso', methods=['POST'])
+def procesar_evento():
+    data = request.json
+    codigo = data.get('codigo')
+    evento_id = data.get('evento_id')
+    
+    if not codigo or not evento_id: 
+        return jsonify({'status': 'error', 'msg': 'Faltan datos requeridos'})
+        
+    res = procesar_ingreso_evento(codigo, evento_id)
+    return jsonify(res)

@@ -109,10 +109,16 @@
     // --- INICIALIZACIÓN ---
     window.onload = function () {
         buscarAlumno();
+
+        // Auto-update silencioso cada 15s
+        setInterval(() => {
+            if (!document.getElementById('modal-editar').classList.contains('hidden')) return;
+            buscarAlumno(currentPage, true);
+        }, 15000);
     };
 
     // --- BÚSQUEDA Y RENDERIZADO ---
-    function buscarAlumno(pagina = 1) {
+    function buscarAlumno(pagina = 1, silent = false) {
         const query = document.getElementById('input-busqueda').value;
         currentPage = pagina;
 
@@ -124,13 +130,12 @@
 
         // Indicador de carga
         const info = document.getElementById('info-paginacion');
-        info.innerText = "Cargando...";
+        if (!silent) info.innerText = "Cargando...";
 
         fetch(url)
             .then(res => res.json())
             .then(resp => {
                 const tbody = document.getElementById('tabla-body');
-                tbody.innerHTML = '';
 
                 const data = resp.data;
                 const meta = resp.pagination;
@@ -149,6 +154,7 @@
 
                 info.innerText = `Mostrando ${data.length} de ${meta.total_items} alumnos`;
 
+                let html = "";
                 data.forEach(alumno => {
                     const isActivo = alumno.estado === 'ACTIVO';
                     const estadoHtml = isActivo
@@ -162,9 +168,8 @@
                     // Verificar si está seleccionado
                     const isChecked = selectedIds.has(String(alumno.id)) ? 'checked' : '';
 
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-slate-50 transition-colors group";
-                    tr.innerHTML = `
+                    html += `
+                        <tr class="hover:bg-slate-50 transition-colors group">
                         <td class="px-6 py-3 text-center border-b border-slate-50 relative">
                             <input type="checkbox" value="${alumno.id}" onchange="toggleIndividual(this)" ${isChecked}
                                    class="check-alumno w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 cursor-pointer">
@@ -183,9 +188,10 @@
                                 <i class="ph ph-pencil-simple text-lg"></i>
                             </button>
                         </td>
-                    `;
-                    tbody.appendChild(tr);
+                    </tr>`;
                 });
+
+                tbody.innerHTML = html;
 
                 actualizarControlesPaginacion();
                 actualizarContador(); // Actualizar barra con el total global

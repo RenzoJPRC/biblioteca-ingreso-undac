@@ -20,14 +20,20 @@ function inicializarAdminPersonal() {
             await submitGuardarPersonal(e);
         }
     }
+
+    // Polling silencioso
+    setInterval(() => {
+        if (!document.getElementById('modal-personal').classList.contains('hidden')) return;
+        buscarPersonal(currentPage, true);
+    }, 15000);
 }
 
-function buscarPersonal(pagina = 1) {
+function buscarPersonal(pagina = 1, silent = false) {
     const inputQ = document.getElementById('input-busqueda');
     const q = inputQ ? inputQ.value : '';
     const btnSearch = document.getElementById('btn-search');
 
-    if (btnSearch) btnSearch.disabled = true;
+    if (btnSearch && !silent) btnSearch.disabled = true;
 
     fetch(`/admin/buscar_personal?q=${encodeURIComponent(q)}&page=${pagina}`)
         .then(res => res.json())
@@ -35,15 +41,15 @@ function buscarPersonal(pagina = 1) {
             const tbody = document.getElementById('tabla-body');
             if (!tbody) return;
 
-            tbody.innerHTML = '';
             currentPage = data.pagination.page;
             totalPages = data.pagination.total_pages;
 
             if (data.data.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-slate-400"><i class="ph ph-empty text-3xl mb-2 block"></i>No hay personal encontrado</td></tr>`;
             } else {
+                let html = "";
                 data.data.forEach(p => {
-                    let row = `
+                    html += `
                         <tr class="hover:bg-slate-50 transition-colors group">
                             <td class="px-6 py-3 font-mono text-slate-500">${p.dni}</td>
                             <td class="px-6 py-3 font-bold text-slate-700">${p.nombre}</td>
@@ -68,8 +74,8 @@ function buscarPersonal(pagina = 1) {
                             </td>
                         </tr>
                     `;
-                    tbody.innerHTML += row;
                 });
+                tbody.innerHTML = html;
             }
             actualizarControlesPaginacion();
         })

@@ -158,6 +158,29 @@
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         inicializarFormularioVisitante();
+
+        // Polling silencioso
+        setInterval(() => {
+            fetch(window.location.href)
+                .then(res => res.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, "text/html");
+
+                    const tbodyActual = document.querySelector('tbody');
+                    const tbodyNuevo = doc.querySelector('tbody');
+                    if (tbodyActual && tbodyNuevo) {
+                        tbodyActual.innerHTML = tbodyNuevo.innerHTML;
+                    }
+
+                    const countActual = document.querySelector('h3.font-bold.text-slate-800.text-lg').nextElementSibling;
+                    const countNuevo = doc.querySelector('h3.font-bold.text-slate-800.text-lg').nextElementSibling;
+                    if (countActual && countNuevo) {
+                        countActual.innerHTML = countNuevo.innerHTML;
+                    }
+                })
+                .catch(err => console.error("Error en polling de visitantes:", err));
+        }, 15000);
     });
 </script>
 {% endblock %}

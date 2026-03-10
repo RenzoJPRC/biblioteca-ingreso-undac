@@ -108,7 +108,7 @@ function inicializarAutoRefresh(isToday) {
                 }
 
                 // 3. Actualizar Tabla
-                const tbody = document.querySelector('table tbody');
+                const tbody = document.getElementById('tbody-ultimos');
                 if (tbody) {
                     tbody.innerHTML = '';
                     data.ultimos.forEach(reg => {
@@ -119,8 +119,16 @@ function inicializarAutoRefresh(isToday) {
                             pillHTML = '<span class="text-[10px] bg-purple-100 text-purple-700 px-1 rounded ml-1">ADM</span>';
                         }
 
+                        let sedeStr = reg.sede || 'Central';
+                        let ubicacionHTML = '';
+                        if (sedeStr === 'Central') {
+                            ubicacionHTML = `Piso ${reg.piso}`;
+                        } else {
+                            ubicacionHTML = `<span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded truncate inline-block max-w-[100px] uppercase">${sedeStr}</span>`;
+                        }
+
                         const rowHTML = `
-                            <tr>
+                            <tr data-sede="${sedeStr}">
                                 <td class="px-6 py-3 text-slate-500">
                                     <span class="block text-xs font-bold text-slate-400 mb-0.5">${reg.fecha}</span>
                                     <span class="font-mono text-[13px]">${reg.hora}</span>
@@ -129,15 +137,47 @@ function inicializarAutoRefresh(isToday) {
                                     ${reg.nombre} ${pillHTML}
                                 </td>
                                 <td class="px-6 py-3 text-slate-500">${reg.origen}</td>
-                                <td class="px-6 py-3 text-center">${reg.piso}</td>
+                                <td class="px-6 py-3 text-center font-medium text-slate-600">${ubicacionHTML}</td>
                             </tr>
                         `;
                         tbody.innerHTML += rowHTML;
                     });
+
+                    // Re-aplicar filtro actual
+                    if (window.currentFiltroSede) {
+                        filtrarUltimos(window.currentFiltroSede, null, true);
+                    }
                 }
             } catch (error) {
                 console.log("Error consultando datos en vivo:", error);
             }
         }, 15000);
     }
+}
+
+function filtrarUltimos(categoria, btnElement = null, isAutoRefresh = false) {
+    window.currentFiltroSede = categoria;
+
+    // Actualizar estilos de botones si fue click manual
+    if (!isAutoRefresh && btnElement) {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('bg-slate-800', 'text-white');
+            btn.classList.add('text-slate-500', 'hover:bg-slate-100');
+        });
+        btnElement.classList.remove('text-slate-500', 'hover:bg-slate-100');
+        btnElement.classList.add('bg-slate-800', 'text-white');
+    }
+
+    // Filtrar filas
+    const filas = document.querySelectorAll('#tbody-ultimos tr');
+    filas.forEach(fila => {
+        const sedeFila = fila.getAttribute('data-sede');
+        if (categoria === 'Todos') {
+            fila.style.display = '';
+        } else if (categoria === 'Central') {
+            fila.style.display = sedeFila === 'Central' ? '' : 'none';
+        } else if (categoria === 'Filiales') {
+            fila.style.display = sedeFila !== 'Central' ? '' : 'none';
+        }
+    });
 }

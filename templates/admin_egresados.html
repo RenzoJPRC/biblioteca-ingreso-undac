@@ -147,22 +147,27 @@
 
     window.onload = function () {
         buscarEgresado();
+
+        // Auto-update silencioso cada 15s
+        setInterval(() => {
+            if (!document.getElementById('modal-egresado').classList.contains('hidden')) return;
+            buscarEgresado(currentPage, true);
+        }, 15000);
     };
 
-    function buscarEgresado(pagina = 1) {
+    function buscarEgresado(pagina = 1, silent = false) {
         const query = document.getElementById('input-busqueda').value;
         currentPage = pagina;
 
         const url = `/admin/buscar_egresado?q=${query}&page=${currentPage}`;
 
         const info = document.getElementById('info-paginacion');
-        info.innerText = "Cargando...";
+        if (!silent) info.innerText = "Cargando...";
 
         fetch(url)
             .then(res => res.json())
             .then(resp => {
                 const tbody = document.getElementById('tabla-body');
-                tbody.innerHTML = '';
 
                 const data = resp.data;
                 const meta = resp.pagination;
@@ -179,15 +184,15 @@
 
                 info.innerText = `Mostrando ${data.length} de ${meta.total_items} egresados`;
 
+                let html = "";
                 data.forEach(egre => {
                     const isActivo = egre.estado === 'ACTIVO';
                     const estadoHtml = isActivo
                         ? `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">ACTIVO</span>`
                         : `<span class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">INACTIVO</span>`;
 
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-slate-50 transition-colors group";
-                    tr.innerHTML = `
+                    html += `
+                        <tr class="hover:bg-slate-50 transition-colors group">
                         <td class="px-6 py-3 font-medium text-slate-700 border-b border-slate-50">${egre.nombre}</td>
                         <td class="px-6 py-3 border-b border-slate-50">
                             <div class="text-slate-600 font-bold">${egre.dni}</div>
@@ -212,9 +217,10 @@
                                 <i class="ph ph-trash text-lg"></i>
                             </button>
                         </td>
-                    `;
-                    tbody.appendChild(tr);
+                    </tr>`;
                 });
+
+                tbody.innerHTML = html;
 
                 actualizarControlesPaginacion();
             })

@@ -41,7 +41,15 @@
 
     <div class="absolute top-10 right-10 flex items-center gap-2">
         <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-        <span class="text-slate-600 font-mono text-sm uppercase">Terminal Piso {{ piso }}</span>
+        <span class="text-slate-600 font-mono text-sm uppercase">
+            {% if sede == 'Central' and piso != 'EVENTO' %}
+            Terminal Piso {{ piso }}
+            {% elif piso == 'EVENTO' %}
+            Terminal Evento
+            {% else %}
+            Terminal {{ sede }}
+            {% endif %}
+        </span>
     </div>
 
     <div class="w-full max-w-4xl text-center p-8">
@@ -90,11 +98,21 @@
 
     <script>
         const input = document.getElementById('input-lector');
-        const piso = Number("{{ piso }}");
+        const isEventoStr = "{{ evento_id | default('') }}";
+        const eventoId = isEventoStr ? Number(isEventoStr) : null;
+        const pisoStr = "{{ piso }}";
+        const piso = (pisoStr === "EVENTO" || !pisoStr) ? null : Number(pisoStr);
+        const sede = "{{ sede }}";
         let timer;
 
         function focarInput() { input.focus(); }
-        window.onload = focarInput;
+        window.onload = () => {
+            focarInput();
+            // NUEVO: Si estamos en modo "Evento", revisar cada minuto si el evento sigue vivo
+            if (eventoId) {
+                setInterval(verificarExpiracionEvento, 60000); // 60 segundos
+            }
+        };
         input.addEventListener('blur', () => setTimeout(focarInput, 50));
 
         input.addEventListener('keydown', (e) => {
@@ -106,10 +124,18 @@
         });
 
         function procesar(codigo) {
-            fetch('/procesar_ingreso', {
+            let url = '/procesar_ingreso';
+            let bodyData = { codigo: codigo, piso: piso, sede: sede };
+
+            if (eventoId) {
+                url = '/procesar_evento_ingreso';
+                bodyData = { codigo: codigo, evento_id: eventoId };
+            }
+
+            fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ codigo: codigo, piso: piso })
+                body: JSON.stringify(bodyData)
             })
                 .then(res => res.json())
                 .then(data => mostrar(data))
@@ -219,6 +245,23 @@
             } else {
                 sem.style.display = 'none';
             }
+        }
+
+        // NUEVO: Verificador de Supervivencia del Evento ESPECÍFICO
+        function verificarExpiracionEvento() {
+            if (!eventoId) return;
+            fetch(`/api/evento_estado/${eventoId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success' && data.activo === false) {
+                        // El evento finalizó oficialmente o su hora ya pasó. Volver a inicio.
+                        window.location.href = '/';
+                    } else if (data.status === 'error') {
+                        // Si el evento fue borrado completamente de la base de datos
+                        window.location.href = '/';
+                    }
+                })
+                .catch(err => console.error("Error validando vida del evento:", err));
         }
     </script>
 </body>
