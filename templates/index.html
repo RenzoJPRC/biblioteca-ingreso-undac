@@ -126,23 +126,37 @@
                         </div>
                         <i class="ph-bold ph-caret-right text-slate-300 group-hover:text-white transition-colors"></i>
                     </a>
-                    <!-- Evento -->
-                    <a href="#" id="btn-evento"
-                        class="group flex items-center justify-between p-4 bg-slate-100 border border-slate-200 rounded-xl transition-all duration-300 shadow-sm opacity-60 cursor-not-allowed pointer-events-none relative overflow-hidden">
+                    <!-- Botón para ir al sub-menú de Eventos Especiales -->
+                    <button onclick="toggleMenu('eventos-menu')"
+                        class="group flex items-center justify-between p-4 bg-white border border-rose-200 rounded-xl hover:bg-rose-500 hover:text-white hover:border-rose-500 transition-all duration-300 shadow-sm relative overflow-hidden">
                         <div class="flex items-center gap-3 relative z-10">
-                            <span id="evento-icon"
-                                class="w-8 h-8 rounded-full bg-slate-200 text-slate-400 flex items-center justify-center font-bold text-sm transition-colors"><i
+                            <span
+                                class="w-8 h-8 rounded-full bg-rose-100 text-rose-500 flex items-center justify-center font-bold text-sm group-hover:bg-white/20 group-hover:text-white transition-colors"><i
                                     class="ph-bold ph-ticket"></i></span>
-                            <div class="flex flex-col text-left">
-                                <span class="font-bold text-lg text-slate-500 transition-colors"
-                                    id="evento-title">Evento</span>
-                                <span class="text-xs text-slate-400 font-medium transition-colors"
-                                    id="evento-desc">Ningún evento programado</span>
-                            </div>
+                            <span class="font-bold text-lg text-slate-700 group-hover:text-white">Evento</span>
                         </div>
-                        <i class="ph-bold ph-lock-key text-slate-400 relative z-10 transition-colors"
-                            id="evento-arrow"></i>
-                    </a>
+                        <i
+                            class="ph-bold ph-caret-right text-slate-300 group-hover:text-white transition-colors relative z-10"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SUB MENU EVENTOS ESPECIALES -->
+        <div id="eventos-menu" class="hidden w-full transition-all duration-300 animate-fade-in-up">
+            <button onclick="toggleMenu('central-menu')"
+                class="mb-4 text-sm text-slate-500 hover:text-rose-600 font-bold flex items-center gap-1 transition-colors"><i
+                    class="ph-bold ph-arrow-left"></i> Volver a Sede Central</button>
+            <div class="bg-rose-50/50 p-6 rounded-2xl border border-rose-100 shadow-sm">
+                <h2 class="text-rose-800 font-bold uppercase tracking-wider text-sm flex items-center gap-2 mb-1">
+                    <i class="ph-fill ph-ticket text-lg"></i> Eventos Hoy
+                </h2>
+                <p class="text-xs text-rose-600/70 mb-5 font-medium">Agenda de eventos para la fecha actual.</p>
+                <div id="eventos-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Eventos Dinámicos se inyectarán aquí por JS -->
+                    <div class="col-span-full py-8 text-center text-rose-300 font-medium">
+                        Cargando agenda...
+                    </div>
                 </div>
             </div>
         </div>
@@ -236,71 +250,93 @@
             const main = document.getElementById('main-menu');
             const central = document.getElementById('central-menu');
             const filial = document.getElementById('filial-menu');
+            const eventos = document.getElementById('eventos-menu');
 
             // Ocultar todos
             main.classList.add('hidden');
             central.classList.add('hidden');
             filial.classList.add('hidden');
+            if (eventos) eventos.classList.add('hidden');
 
             // Mostrar el solicitado
             const activeMenu = document.getElementById(menuId);
             activeMenu.classList.remove('hidden');
+
+            // Si entra a eventos, recargamos la lista
+            if (menuId === 'eventos-menu') {
+                verificarEventoActivo();
+            }
         }
 
         function verificarEventoActivo() {
             fetch('/api/eventos_activos')
                 .then(response => response.json())
                 .then(data => {
-                    const btn = document.getElementById('btn-evento');
-                    const iconSpan = document.getElementById('evento-icon');
-                    const titleDiv = document.getElementById('evento-title');
-                    const descDiv = document.getElementById('evento-desc');
-                    const arrowIcon = document.getElementById('evento-arrow');
+                    const container = document.getElementById('eventos-container');
 
-                    if (data.status === 'success' && data.evento_activo) {
-                        // ACTIVAR BOTÓN EVENTO
-                        const eventoId = data.evento.id;
-                        const eventoNombre = data.evento.nombre;
+                    if (data.status === 'success' && data.eventos_activos && data.eventos.length > 0) {
+                        // Filtrar los que están finalizados para que ya no aparezcan en la vista
+                        const eventosActivosYProximos = data.eventos.filter(evt => evt.estado_virtual !== 'finalizado');
 
-                        btn.href = `/evento/${eventoId}`;
+                        if (eventosActivosYProximos.length > 0) {
+                            let html = '';
+                            eventosActivosYProximos.forEach(evt => {
+                                if (evt.estado_virtual === 'en_curso') {
+                                    // Rojo, animado y con link
+                                    html += `
+                                    <a href="/evento/${evt.id}" class="group flex items-center justify-between p-4 bg-white border border-rose-500 rounded-xl transition-all duration-300 shadow-sm cursor-pointer opacity-100 evento-activo-anim hover:text-white">
+                                        <div class="flex flex-col gap-1 relative z-10 w-full pr-4">
+                                            <div class="flex justify-between items-center w-full mb-1">
+                                                <span class="bg-rose-100 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded-full group-hover:bg-white/30 group-hover:text-white transition-colors flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-rose-500 group-hover:bg-white animate-pulse"></span> EN CURSO</span>
+                                                <span class="text-xs font-bold text-rose-500 flex items-center gap-1 group-hover:text-white/80 transition-colors"><i class="ph-bold ph-clock"></i> ${evt.hora_inicio} - ${evt.hora_fin}</span>
+                                            </div>
+                                            <h3 class="font-bold text-lg text-slate-800 transition-colors group-hover:text-white leading-tight">${evt.nombre}</h3>
+                                            <span class="text-xs text-slate-500 font-medium transition-colors group-hover:text-white/80 flex items-center gap-1"><i class="ph-fill ph-map-pin"></i> ${evt.lugar}</span>
+                                        </div>
+                                        <div class="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center shrink-0 group-hover:bg-white/20 transition-colors">
+                                            <i class="ph-bold ph-caret-right text-rose-500 group-hover:text-white transition-colors text-xl"></i>
+                                        </div>
+                                    </a>`;
+                                } else if (evt.estado_virtual === 'proximo') {
+                                    // Grisáceo bloqueado
+                                    html += `
+                                    <div class="group flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl transition-all duration-300 shadow-sm opacity-80 cursor-not-allowed relative">
+                                        <div class="flex flex-col gap-1 relative z-10 w-full pr-4">
+                                            <div class="flex justify-between items-center w-full mb-1">
+                                                <span class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"><i class="ph-bold ph-hourglass-high"></i> PRÓXIMO</span>
+                                                <span class="text-xs font-bold text-slate-500 flex items-center gap-1"><i class="ph-bold ph-clock"></i> ${evt.hora_inicio} - ${evt.hora_fin}</span>
+                                            </div>
+                                            <h3 class="font-bold text-lg text-slate-700 leading-tight">${evt.nombre}</h3>
+                                            <span class="text-xs text-slate-400 font-medium flex items-center gap-1"><i class="ph-fill ph-map-pin"></i> ${evt.lugar}</span>
+                                        </div>
+                                        <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                                            <i class="ph-bold ph-lock-key text-slate-400 text-xl"></i>
+                                        </div>
+                                    </div>`;
+                                }
+                            });
 
-                        // Quitar estado deshabilitado
-                        btn.classList.remove('opacity-60', 'cursor-not-allowed', 'pointer-events-none', 'bg-slate-100', 'border-slate-200');
-                        btn.classList.add('bg-white', 'evento-activo-anim', 'group-hover:text-white', 'cursor-pointer', 'opacity-100');
-
-                        // Cambiar colores del ícono interior
-                        iconSpan.className = "w-8 h-8 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-sm transition-colors group-hover:bg-white/20 group-hover:text-white";
-
-                        // Cambiar textos
-                        titleDiv.className = "font-bold text-lg text-slate-700 transition-colors group-hover:text-white";
-                        titleDiv.innerText = "Ingreso Evento";
-
-                        descDiv.className = "text-xs text-rose-500 font-bold uppercase tracking-wider transition-colors group-hover:text-white/80";
-                        descDiv.innerText = eventoNombre;
-
-                        // Cambiar ícono del candado a flecha
-                        arrowIcon.className = "ph-bold ph-caret-right text-rose-400 group-hover:text-white transition-colors text-xl";
-
+                            container.innerHTML = html;
+                        } else {
+                            renderEmptyAgenda(container);
+                        }
                     } else {
-                        // DESACTIVAR / MANTENER DESACTIVADO
-                        btn.href = "#";
-
-                        // Restaurar estado deshabilitado
-                        btn.classList.add('opacity-60', 'cursor-not-allowed', 'pointer-events-none', 'bg-slate-100', 'border-slate-200');
-                        btn.classList.remove('bg-white', 'evento-activo-anim', 'group-hover:text-white', 'cursor-pointer', 'opacity-100');
-
-                        iconSpan.className = "w-8 h-8 rounded-full bg-slate-200 text-slate-400 flex items-center justify-center font-bold text-sm transition-colors";
-
-                        titleDiv.className = "font-bold text-lg text-slate-500 transition-colors";
-                        titleDiv.innerText = "Evento Especial";
-
-                        descDiv.className = "text-xs text-slate-400 font-medium transition-colors";
-                        descDiv.innerText = "Ningún evento activo";
-
-                        arrowIcon.className = "ph-bold ph-lock-key text-slate-400 transition-colors";
+                        renderEmptyAgenda(container);
                     }
                 })
-                .catch(error => console.error("Error al consultar evento:", error));
+                .catch(error => {
+                    console.error("Error al consultar agenda:", error);
+                    document.getElementById('eventos-container').innerHTML = `<div class="col-span-full text-center text-rose-400 text-sm py-8"><i class="ph-fill ph-warning-circle text-xl mb-2"></i><br>Error al cargar agenda</div>`;
+                });
+        }
+
+        function renderEmptyAgenda(container) {
+            container.innerHTML = `
+            <div class="col-span-full flex flex-col items-center justify-center py-12 px-4 bg-white/50 rounded-xl border border-rose-100 border-dashed animate-fade-in-up">
+                <i class="ph-fill ph-calendar-blank text-5xl text-rose-200 mb-3"></i>
+                <h3 class="text-lg font-bold text-rose-900/60 mb-1">Agenda Vacía</h3>
+                <p class="text-sm text-rose-600/50 text-center max-w-sm">No hay ningún evento pendiente o en curso para el día de hoy.</p>
+            </div>`;
         }
     </script>
 </body>

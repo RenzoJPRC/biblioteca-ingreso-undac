@@ -48,7 +48,16 @@ function renderizarTabla(eventos) {
 
     let html = "";
     eventos.forEach(evt => {
-        let dotColor = evt.estado === 'Activo' ? 'bg-emerald-500' : (evt.estado === 'Cancelado' ? 'bg-rose-500' : 'bg-slate-400');
+        let dotColor = 'bg-slate-400';
+        let txtEstado = evt.estado_display || evt.estado;
+
+        if (txtEstado === 'En Curso') dotColor = 'bg-emerald-500';
+        else if (txtEstado === 'Próximo') dotColor = 'bg-amber-500';
+        else if (txtEstado === 'Finalizado') dotColor = 'bg-slate-400';
+        else if (evt.estado === 'Cancelado') {
+            dotColor = 'bg-rose-500';
+            txtEstado = 'Cancelado';
+        }
 
         let groups = [];
         if (evt.permite_alumnos) groups.push('Alu');
@@ -63,7 +72,7 @@ function renderizarTabla(eventos) {
             <td class="px-6 py-4 whitespace-nowrap">
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border border-slate-200 bg-white shadow-sm">
                     <span class="w-2 h-2 rounded-full ${dotColor}"></span>
-                    ${evt.estado}
+                    ${txtEstado}
                 </span>
             </td>
             <td class="px-6 py-4">

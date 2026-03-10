@@ -1,38 +1,65 @@
 import datetime
 from db import get_db_connection
 
-def obtener_evento_activo_actual():
+def obtener_agenda_eventos_hoy():
     """
-    Retorna el evento que está activo o por iniciar en los próximos 10 minutos.
-    Si hay un evento activo, devuelve un dict con los datos. Si no, None.
+    Retorna toda la agenda de eventos para el día de hoy, categorizándolos
+    como 'en_curso', 'proximo', o 'finalizado'.
     """
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Consulta: Eventos de hoy, donde la hora actual está entre (HoraInicio - 10 min) y HoraFin
-        # Y estado sea 'Activo'
+        # Solo eventos de HOY que no estén Cancelados.
         sql = """
-            SELECT EventoID, NombreEvento, HoraInicio, HoraFin 
+            SELECT EventoID, NombreEvento, HoraInicio, HoraFin, Lugar
             FROM Eventos 
             WHERE FechaEvento = CAST(GETDATE() AS DATE)
-            AND Estado = 'Activo'
-            AND CAST(GETDATE() AS TIME) >= DATEADD(minute, -10, HoraInicio)
-            AND CAST(GETDATE() AS TIME) <= HoraFin
+            AND Estado != 'Cancelado'
+            ORDER BY HoraInicio ASC
         """
         cursor.execute(sql)
-        row = cursor.fetchone()
+        rows = cursor.fetchall()
         
-        if row:
-            return {
+        # Necesitamos la hora actual para calcular estados
+        cursor.execute("SELECT CAST(GETDATE() AS TIME)")
+        current_time = cursor.fetchone()[0]
+        
+        agenda = []
+        for row in rows:
+            h_ini = row[2]
+            h_fin = row[3]
+            
+            def to_minutes(t):
+                return t.hour * 60 + t.minute
+                
+            curr_min = to_minutes(current_time)
+            ini_min = to_minutes(h_ini)
+            fin_min = to_minutes(h_fin)
+            
+            estado_virtual = "finalizado"
+            if curr_min < (ini_min - 15):
+                estado_virtual = "proximo"
+            elif curr_min >= (ini_min - 15) and curr_min <= fin_min:
+                estado_virtual = "en_curso"
+            
+            h_ini_str = f"{h_ini.hour:02d}:{h_ini.minute:02d}"
+            h_fin_str = f"{h_fin.hour:02d}:{h_fin.minute:02d}"
+
+            agenda.append({
                 'id': row[0],
-                'nombre': row[1]
-            }
-        return None
+                'nombre': row[1],
+                'lugar': row[4],
+                'hora_inicio': h_ini_str,
+                'hora_fin': h_fin_str,
+                'estado_virtual': estado_virtual
+            })
+            
+        return agenda
         
     except Exception as e:
-        print(f"Error consultando evento activo: {e}")
-        return None
+        print(f"Error consultando agenda de eventos: {e}")
+        return []
     finally:
         if 'conn' in locals() and conn:
             conn.close()

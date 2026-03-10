@@ -46,6 +46,15 @@ def buscar_eventos(query='', page=1):
                     cursor_update.execute("UPDATE Eventos SET Estado = 'Finalizado' WHERE EventoID = ?", (evento_id,))
                     cursor_update.commit()
             
+            # Calcular estado display
+            estado_display = estado
+            if estado == 'Activo':
+                fecha_hora_inicio = datetime.combine(fecha_evento, row[3]) # HoraInicio
+                if now < fecha_hora_inicio:
+                    estado_display = 'Próximo'
+                else:
+                    estado_display = 'En Curso'
+            
             # Contar asistencia
             cursor.execute("SELECT COUNT(*) FROM AsistenciaEventos WHERE EventoID = ?", (evento_id,))
             asistentes = cursor.fetchone()[0]
@@ -62,6 +71,7 @@ def buscar_eventos(query='', page=1):
                 'hora_fin': hora_fin.strftime('%H:%M'),
                 'lugar': row[5] or '',
                 'estado': estado,
+                'estado_display': estado_display,
                 'permite_alumnos': bool(row[7]),
                 'permite_egresados': bool(row[8]),
                 'permite_personal': bool(row[9]),

@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify
 from db import get_db_connection
-from utils.queries_eventos import obtener_evento_activo_actual, procesar_ingreso_evento, verificar_estado_evento
+from utils.queries_eventos import obtener_agenda_eventos_hoy, procesar_ingreso_evento, verificar_estado_evento
 
 # Definimos el Blueprint
 ingreso_bp = Blueprint('ingreso', __name__)
@@ -97,10 +97,10 @@ def procesar_ingreso():
 # --- RUTAS DE EVENTOS ---
 @ingreso_bp.route('/api/eventos_activos', methods=['GET'])
 def api_eventos_activos():
-    evento = obtener_evento_activo_actual()
-    if evento:
-        return jsonify({'status': 'success', 'evento_activo': True, 'evento': evento})
-    return jsonify({'status': 'success', 'evento_activo': False})
+    eventos = obtener_agenda_eventos_hoy()
+    if eventos and len(eventos) > 0:
+        return jsonify({'status': 'success', 'eventos_activos': True, 'eventos': eventos})
+    return jsonify({'status': 'success', 'eventos_activos': False, 'eventos': []})
 
 @ingreso_bp.route('/api/evento_estado/<int:evento_id>', methods=['GET'])
 def api_evento_estado(evento_id):
