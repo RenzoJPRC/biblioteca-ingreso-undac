@@ -36,6 +36,7 @@
                     <tr>
                         <th class="px-6 py-3">Estado</th>
                         <th class="px-6 py-3">Nombre del Evento</th>
+                        <th class="px-6 py-3">Sede</th>
                         <th class="px-6 py-3">Fecha y Hora</th>
                         <th class="px-6 py-3 text-center">Asistentes</th>
                         <th class="px-6 py-3 text-center">Invitados Excl.</th>
@@ -100,6 +101,19 @@
                     placeholder="Ej: Auditorio Principal, Pabellón A...">
             </div>
 
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Sede Destino *</label>
+                <select id="modal-sede" required
+                    class="border border-slate-300 w-full p-2.5 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none transition-all bg-white font-bold text-slate-700">
+                    <option value="Central">Sede Central (Pasco)</option>
+                    <option value="Tarma">Filial Tarma</option>
+                    <option value="La Merced">Filial La Merced</option>
+                    <option value="Oxapampa">Filial Oxapampa</option>
+                    <option value="Paucartambo">Filial Paucartambo</option>
+                    <option value="Yanahuanca">Filial Yanahuanca</option>
+                </select>
+            </div>
+
             <hr class="border-slate-100 my-4">
 
             <div>
@@ -120,7 +134,7 @@
                     <label
                         class="flex items-center gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
                         <input type="checkbox" id="chk-personal" class="w-4 h-4 text-rose-600 rounded">
-                        <span class="text-sm font-bold text-slate-700">Personal</span>
+                        <span class="text-sm font-bold text-slate-700">Administrativo y/o Personal</span>
                     </label>
                     <label
                         class="flex items-center gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
@@ -164,11 +178,21 @@
         <form id="form-excel" onsubmit="uploadExcel(event)" class="space-y-4">
             <input type="hidden" id="excel-evento-id">
 
-            <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 flex gap-3">
-                <i class="ph-fill ph-info text-rose-500 text-xl shrink-0"></i>
-                <p>El Excel debe contener las columnas: <br><b><span class="text-slate-800">DNI</span></b>, <b><span
-                            class="text-slate-800">NOMBRES</span></b> (opcional: <span
-                        class="text-slate-500">INSTITUCION</span>).</p>
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 flex flex-col gap-2">
+                <div class="flex gap-2 items-start">
+                    <i class="ph-fill ph-info text-rose-500 text-xl shrink-0 mt-0.5"></i>
+                    <p>El Excel debe contener obligatoriamente: <br><b><span class="text-slate-800">DNI</span></b> y
+                        <b><span class="text-slate-800">NOMBRES</span></b> (Institución opcional).
+                    </p>
+                </div>
+                <!-- NUEVO MENSAJE DE ACLARACIÓN PARA EL USUARIO -->
+                <div class="flex gap-2 items-start mt-2 border-t border-slate-200 pt-3">
+                    <i class="ph-fill ph-lightbulb text-amber-500 text-xl shrink-0 mt-0.5"></i>
+                    <p class="text-xs"><strong>Tip de uso:</strong> Esta lista es ideal para registrar
+                        <em>transportistas, organizadores, o visitantes externos</em> que asisten puntualmente a este
+                        evento y que <strong>no quieres revolver</strong> en tu padrón general de Visitantes.
+                    </p>
+                </div>
             </div>
 
             <div>

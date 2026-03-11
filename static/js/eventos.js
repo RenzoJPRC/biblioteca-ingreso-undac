@@ -87,6 +87,11 @@ function renderizarTabla(eventos) {
                 </div>
             </td>
             <td class="px-6 py-4">
+                <span class="inline-flex items-center justify-center px-2 py-1 rounded text-xs font-bold ${evt.sede === 'Central' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'} border ${evt.sede === 'Central' ? 'border-rose-100' : 'border-emerald-100'} uppercase">
+                    ${evt.sede}
+                </span>
+            </td>
+            <td class="px-6 py-4">
                 <p class="text-sm font-bold text-slate-700">${evt.fecha}</p>
                 <p class="text-xs text-slate-500 font-mono">${evt.hora_inicio} - ${evt.hora_fin}</p>
             </td>
@@ -123,6 +128,7 @@ function renderizarTabla(eventos) {
 function abrirModalNuevo() {
     document.getElementById('form-evento').reset();
     document.getElementById('modal-id').value = '';
+    document.getElementById('modal-sede').value = 'Central';
     document.getElementById('modal-titulo').innerHTML = `<i class="ph ph-calendar-plus text-rose-600 text-2xl"></i><span>Nuevo Evento</span>`;
 
     // Checkboxes default auto
@@ -176,6 +182,7 @@ function editarEvento(id) {
             document.getElementById('modal-hora-inicio').value = evento.hora_inicio;
             document.getElementById('modal-hora-fin').value = evento.hora_fin;
             document.getElementById('modal-lugar').value = evento.lugar;
+            document.getElementById('modal-sede').value = evento.sede || 'Central';
 
             document.getElementById('chk-alumnos').checked = evento.permite_alumnos;
             document.getElementById('chk-egresados').checked = evento.permite_egresados;
@@ -210,6 +217,7 @@ function guardarEvento(e) {
         hora_inicio: document.getElementById('modal-hora-inicio').value,
         hora_fin: document.getElementById('modal-hora-fin').value,
         lugar: document.getElementById('modal-lugar').value,
+        sede: document.getElementById('modal-sede').value,
         estado: estadoActual,
         permite_alumnos: document.getElementById('chk-alumnos').checked,
         permite_egresados: document.getElementById('chk-egresados').checked,

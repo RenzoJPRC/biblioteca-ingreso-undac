@@ -91,7 +91,7 @@ def procesar_excel_visitantes(file):
             
             if not dni or len(dni) < 5 or not nombre: continue
 
-            err_bool, _ = verificar_dni_global(dni)
+            err_bool, _ = verificar_dni_global(dni, cursor=cursor)
             if err_bool: continue 
             
             cursor.execute("SELECT VisitanteID FROM Visitantes WHERE DNI = ?", (dni,))

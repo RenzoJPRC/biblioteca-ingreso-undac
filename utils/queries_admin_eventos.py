@@ -20,7 +20,7 @@ def buscar_eventos(query='', page=1):
         # Datos
         sql_datos = f"""
             SELECT EventoID, NombreEvento, FechaEvento, HoraInicio, HoraFin, Lugar, Estado,
-                   PermiteAlumnos, PermiteEgresados, PermitePersonal, PermiteVisitantes
+                   PermiteAlumnos, PermiteEgresados, PermitePersonal, PermiteVisitantes, NombreSede
             {sql_base}
             ORDER BY FechaEvento DESC, HoraInicio DESC
             OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
@@ -76,6 +76,7 @@ def buscar_eventos(query='', page=1):
                 'permite_egresados': bool(row[8]),
                 'permite_personal': bool(row[9]),
                 'permite_visitantes': bool(row[10]),
+                'sede': row[11] or 'Central',
                 'total_asistentes': asistentes,
                 'total_invitados': invitados
             })
@@ -105,6 +106,7 @@ def guardar_evento(data):
         hora_fin = data.get('hora_fin')
         lugar = data.get('lugar', '')
         estado = data.get('estado', 'Activo')
+        sede = data.get('sede', 'Central')
         
         p_alu = 1 if data.get('permite_alumnos') else 0
         p_egr = 1 if data.get('permite_egresados') else 0
@@ -115,17 +117,17 @@ def guardar_evento(data):
             cursor.execute("""
                 UPDATE Eventos 
                 SET NombreEvento=?, FechaEvento=?, HoraInicio=?, HoraFin=?, Lugar=?, Estado=?,
-                    PermiteAlumnos=?, PermiteEgresados=?, PermitePersonal=?, PermiteVisitantes=?
+                    PermiteAlumnos=?, PermiteEgresados=?, PermitePersonal=?, PermiteVisitantes=?, NombreSede=?
                 WHERE EventoID=?
-            """, (nombre, fecha, hora_inicio, hora_fin, lugar, estado, p_alu, p_egr, p_per, p_vis, evento_id))
+            """, (nombre, fecha, hora_inicio, hora_fin, lugar, estado, p_alu, p_egr, p_per, p_vis, sede, evento_id))
             msg = 'Evento actualizado correctamente.'
         else: # INSERT
             cursor.execute("""
                 INSERT INTO Eventos 
                 (NombreEvento, FechaEvento, HoraInicio, HoraFin, Lugar, Estado, 
-                 PermiteAlumnos, PermiteEgresados, PermitePersonal, PermiteVisitantes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (nombre, fecha, hora_inicio, hora_fin, lugar, estado, p_alu, p_egr, p_per, p_vis))
+                 PermiteAlumnos, PermiteEgresados, PermitePersonal, PermiteVisitantes, NombreSede)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (nombre, fecha, hora_inicio, hora_fin, lugar, estado, p_alu, p_egr, p_per, p_vis, sede))
             msg = 'Evento creado correctamente.'
             
         conn.commit()

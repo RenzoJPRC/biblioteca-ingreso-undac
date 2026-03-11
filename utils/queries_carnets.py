@@ -115,6 +115,31 @@ def actualizar_vencimiento_masivo(ids, accion):
     finally:
         conn.close()
 
+def actualizar_vencimiento_global(accion):
+    año_actual = datetime.now().year
+    fecha_val = None
+
+    if accion == 'activar':
+        fecha_val = f"{año_actual}-12-31"
+    elif accion == 'desactivar':
+        fecha_val = f"{año_actual - 1}-12-31"
+    elif accion == 'auto':
+        fecha_val = None
+    else:
+        return False, 'Acción no válida'
+
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        sql = "UPDATE Alumnos SET FechaVencimientoCarnet = ?"
+        cursor.execute(sql, (fecha_val,))
+        conn.commit()
+        return True, "Se actualizó el estado de todos los alumnos en la base de datos."
+    except Exception as e:
+        return False, str(e)
+    finally:
+        conn.close()
+
 def procesar_excel_alumnos(df):
     conn = get_db_connection()
     contador = 0
@@ -130,7 +155,7 @@ def procesar_excel_alumnos(df):
             if not dni or len(dni) < 5: continue
 
             # --- VALIDACIÓN GLOBAL ---
-            err_bool, _ = verificar_dni_global(dni, ignora_tabla='Alumnos')
+            err_bool, _ = verificar_dni_global(dni, ignora_tabla='Alumnos', cursor=cursor)
             if err_bool: 
                 continue # Saltar alumnos conflictivos silenciosamente
             # -------------------------

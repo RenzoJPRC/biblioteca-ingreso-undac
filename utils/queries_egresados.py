@@ -115,7 +115,7 @@ def procesar_excel_egresados(df):
             if not dni or len(dni) < 5 or not nombre: continue
 
             # --- VALIDACIÓN GLOBAL ---
-            err_bool, _ = verificar_dni_global(dni, ignora_tabla='Egresados')
+            err_bool, _ = verificar_dni_global(dni, ignora_tabla='Egresados', cursor=cursor)
             if err_bool: 
                 continue 
             # -------------------------

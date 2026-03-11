@@ -14,11 +14,41 @@
             </button>
         </div>
 
-        <p class="text-sm text-slate-500 mb-4 leading-relaxed">
+        <p class="text-sm text-slate-500 mb-2 leading-relaxed">
             Sube el archivo Excel oficial de la universidad para actualizar la base de datos de ALUMNOS.
         </p>
 
-        <form id="form-excel-alumnos" class="space-y-4">
+        <div class="bg-sky-50 border border-sky-100 rounded-lg p-3 mb-4">
+            <p class="text-xs font-bold text-sky-800 mb-2 flex items-center gap-1"><i class="ph ph-info"></i> Formato
+                Obligatorio del Excel:</p>
+            <div class="overflow-x-auto no-scrollbar">
+                <table class="w-full text-left text-[10px] text-slate-600 font-mono whitespace-nowrap">
+                    <thead class="bg-sky-100 text-sky-800 uppercase font-bold border-b border-sky-200">
+                        <tr>
+                            <th class="px-2 py-1 border-r border-sky-200">DNI</th>
+                            <th class="px-2 py-1 border-r border-sky-200">APELLIDOS Y NOMBRE</th>
+                            <th class="px-2 py-1 border-r border-sky-200">CODIGO DE MATRICULA</th>
+                            <th class="px-2 py-1 border-r border-sky-200">ESCUELA</th>
+                            <th class="px-2 py-1">SEMESTRE</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="px-2 py-1 border-r border-sky-100">8-digitos</td>
+                            <td class="px-2 py-1 border-r border-sky-100">Texto</td>
+                            <td class="px-2 py-1 border-r border-sky-100">Texto Num.</td>
+                            <td class="px-2 py-1 border-r border-sky-100">Texto</td>
+                            <td class="px-2 py-1">Texto (Opcional)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-[9px] text-slate-500 mt-2 italic">La fila 1 debe contener exactamente estos nombres de
+                columna.</p>
+        </div>
+
+        <form id="form-excel-alumnos" class="space-y-4"
+            onsubmit="event.preventDefault(); manejarEnvioExcel(this, '/admin/subir_excel', 'upload-status-alumnos');">
             <div class="relative group">
                 <input type="file" name="archivo_excel" accept=".xlsx" required
                     class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100 cursor-pointer border border-dashed border-slate-300 rounded-lg p-2 group-hover:border-sky-400 transition-colors" />
@@ -56,11 +86,48 @@
             </button>
         </div>
 
-        <p class="text-sm text-slate-500 mb-4 leading-relaxed">
+        <p class="text-sm text-slate-500 mb-2 leading-relaxed">
             Sube el archivo Excel con los datos de los EGRESADOS.
         </p>
 
-        <form id="form-excel-egresados" class="space-y-4">
+        <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-3 mb-4">
+            <p class="text-xs font-bold text-emerald-800 mb-2 flex items-center gap-1"><i class="ph ph-info"></i>
+                Formato Obligatorio del Excel:</p>
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-max text-left text-[10px] text-slate-600 font-mono">
+                    <thead class="bg-emerald-100 text-emerald-800 uppercase font-bold border-b border-emerald-200">
+                        <tr>
+                            <th class="px-2 py-1 border-r border-emerald-200">DNI</th>
+                            <th class="px-2 py-1 border-r border-emerald-200 whitespace-nowrap">APELLIDOS Y NOMBRE</th>
+                            <th class="px-2 py-1 border-r border-emerald-200 whitespace-nowrap">CODIGO DE MATRICULA</th>
+                            <th class="px-2 py-1 border-r border-emerald-200">FACULTAD</th>
+                            <th class="px-2 py-1 border-r border-emerald-200">ESCUELA</th>
+                            <th class="px-2 py-1 border-r border-emerald-200 whitespace-nowrap">CORREO PERSONAL</th>
+                            <th class="px-2 py-1 border-r border-emerald-200 whitespace-nowrap">CORREO INSTITUCIONAL
+                            </th>
+                            <th class="px-2 py-1">CELULAR</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="px-2 py-1 border-r border-emerald-100">8-digitos</td>
+                            <td class="px-2 py-1 border-r border-emerald-100">Texto</td>
+                            <td class="px-2 py-1 border-r border-emerald-100">Texto Num.</td>
+                            <td class="px-2 py-1 border-r border-emerald-100">Texto</td>
+                            <td class="px-2 py-1 border-r border-emerald-100">Texto</td>
+                            <td class="px-2 py-1 border-r border-emerald-100">Texto (Opcional)</td>
+                            <td class="px-2 py-1 border-r border-emerald-100">Texto (Opcional)</td>
+                            <td class="px-2 py-1">Texto (Opcional)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-[9px] text-slate-500 mt-2 italic">La fila 1 debe contener exactamente estos nombres de
+                columna.</p>
+        </div>
+
+        <form id="form-excel-egresados" class="space-y-4"
+            onsubmit="event.preventDefault(); manejarEnvioExcel(this, '/admin/subir_excel_egresados', 'upload-status-egresados');">
             <div class="relative group">
                 <input type="file" name="archivo_excel" accept=".xlsx" required
                     class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer border border-dashed border-slate-300 rounded-lg p-2 group-hover:border-emerald-400 transition-colors" />
@@ -84,18 +151,6 @@
 </div>
 
 <script>
-    // Formulario Alumnos
-    document.getElementById('form-excel-alumnos').addEventListener('submit', function (e) {
-        e.preventDefault();
-        manejarEnvioExcel(this, '/admin/subir_excel', 'upload-status-alumnos');
-    });
-
-    // Formulario Egresados
-    document.getElementById('form-excel-egresados').addEventListener('submit', function (e) {
-        e.preventDefault();
-        manejarEnvioExcel(this, '/admin/subir_excel_egresados', 'upload-status-egresados');
-    });
-
     function manejarEnvioExcel(formElement, url, statusDivId) {
         const formData = new FormData(formElement);
         const statusDiv = document.getElementById(statusDivId);
@@ -146,18 +201,39 @@
             </button>
         </div>
 
-        <p class="text-sm text-slate-500 mb-4 leading-relaxed">
+        <p class="text-sm text-slate-500 mb-2 leading-relaxed">
             Sube el archivo Excel con los datos de los VISITANTES EXTERNOS.
         </p>
 
-        <div class="mb-3 flex justify-end">
-            <a href="/admin/plantilla/visitantes"
-                class="text-xs font-bold text-orange-600 hover:text-orange-500 transition-colors flex items-center gap-1">
-                <i class="ph ph-download-simple"></i> Descargar Plantilla
-            </a>
+        <div class="bg-orange-50 border border-orange-100 rounded-lg p-3 mb-4">
+            <p class="text-xs font-bold text-orange-800 mb-2 flex items-center gap-1"><i class="ph ph-info"></i> Formato
+                Obligatorio del Excel:</p>
+            <div class="overflow-x-auto no-scrollbar">
+                <table class="w-full text-left text-[10px] text-slate-600 font-mono whitespace-nowrap">
+                    <thead class="bg-orange-100 text-orange-800 uppercase font-bold border-b border-orange-200">
+                        <tr>
+                            <th class="px-2 py-1 border-r border-orange-200">DNI</th>
+                            <th class="px-2 py-1 border-r border-orange-200">NOMBRE COMPLETO</th>
+                            <th class="px-2 py-1 border-r border-orange-200">INSTITUCION</th>
+                            <th class="px-2 py-1">CORREO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="px-2 py-1 border-r border-orange-100">8-digitos</td>
+                            <td class="px-2 py-1 border-r border-orange-100">Texto</td>
+                            <td class="px-2 py-1 border-r border-orange-100">Texto (Opcional)</td>
+                            <td class="px-2 py-1">Texto (Opcional)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-[9px] text-slate-500 mt-2 italic">La fila 1 debe contener exactamente estos nombres de
+                columna.</p>
         </div>
 
-        <form id="form-excel-vis" class="space-y-4">
+        <form id="form-excel-vis" class="space-y-4"
+            onsubmit="event.preventDefault(); manejarEnvioExcel(this, '/admin/subir_excel_visitantes', 'upload-status-vis');">
             <div class="relative group">
                 <input type="file" name="archivo_excel_vis" accept=".xlsx" required
                     class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer border border-dashed border-slate-300 rounded-lg p-2 group-hover:border-orange-400 transition-colors" />
@@ -179,10 +255,99 @@
     </div>
 </div>
 
-<script>
-    // Formulario Visitantes reutilizando la misma función helper
-    document.getElementById('form-excel-vis').addEventListener('submit', function (e) {
-        e.preventDefault();
-        manejarEnvioExcel(this, '/admin/subir_excel_visitantes', 'upload-status-vis');
-    });
-</script>
+
+<style>
+    /* Estilos adicionales para scrollbars dentro del modal si es necesario */
+    .custom-scrollbar::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+</style>
+
+<!-- MODAL PERSONAL ADMINISTRATIVO CHUNK START -->
+<div id="modal-upload-personal"
+    class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 transform transition-all scale-100">
+
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <i class="ph ph-microsoft-excel-logo text-green-600 text-2xl"></i>
+                Importar Personal Admin.
+            </h3>
+            <button onclick="document.getElementById('modal-upload-personal').classList.add('hidden')"
+                class="text-slate-400 hover:text-red-500">
+                <i class="ph ph-x text-2xl"></i>
+            </button>
+        </div>
+
+        <p class="text-sm text-slate-500 mb-2 leading-relaxed">
+            Sube el archivo Excel con los datos del PERSONAL ADMINISTRATIVO.
+        </p>
+
+        <div class="bg-purple-50 border border-purple-100 rounded-lg p-3 mb-4">
+            <p class="text-xs font-bold text-purple-800 mb-2 flex items-center gap-1"><i class="ph ph-info"></i> Formato
+                Obligatorio del Excel:</p>
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-max text-left text-[10px] text-slate-600 font-mono">
+                    <thead class="bg-purple-100 text-purple-800 uppercase font-bold border-b border-purple-200">
+                        <tr>
+                            <th class="px-2 py-1 border-r border-purple-200">DNI</th>
+                            <th class="px-2 py-1 border-r border-purple-200 whitespace-nowrap">APELLIDOS Y NOMBRES</th>
+                            <th class="px-2 py-1 border-r border-purple-200">OFICINA</th>
+                            <th class="px-2 py-1 border-r border-purple-200 whitespace-nowrap">CORREO INSTITUCIONAL</th>
+                            <th class="px-2 py-1 border-r border-purple-200 whitespace-nowrap">CORREO PERSONAL</th>
+                            <th class="px-2 py-1">TELEFONO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="px-2 py-1 border-r border-purple-100">8-digitos</td>
+                            <td class="px-2 py-1 border-r border-purple-100">Texto</td>
+                            <td class="px-2 py-1 border-r border-purple-100">Texto</td>
+                            <td class="px-2 py-1 border-r border-purple-100">Texto (Opcional)</td>
+                            <td class="px-2 py-1 border-r border-purple-100">Texto (Opcional)</td>
+                            <td class="px-2 py-1">Texto (Opcional)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-[9px] text-slate-500 mt-2 italic">La fila 1 debe contener exactamente estos nombres de
+                columna.</p>
+        </div>
+
+        <form id="form-excel-personal" class="space-y-4"
+            onsubmit="event.preventDefault(); manejarEnvioExcel(this, '/admin/subir_excel_personal', 'upload-status-personal');">
+            <div class="relative group">
+                <input type="file" name="archivo_excel" accept=".xlsx" required
+                    class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer border border-dashed border-slate-300 rounded-lg p-2 group-hover:border-purple-400 transition-colors" />
+            </div>
+
+            <div id="upload-status-personal" class="hidden p-3 rounded-lg text-sm font-medium flex items-center gap-2">
+            </div>
+
+            <div class="pt-2 flex justify-end gap-3 border-t border-slate-100">
+                <button type="button" onclick="document.getElementById('modal-upload-personal').classList.add('hidden')"
+                    class="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-lg font-medium transition-colors">Cancelar</button>
+                <button type="submit"
+                    class="px-6 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold shadow-lg transition-all flex items-center gap-2">
+                    <i class="ph ph-upload-simple text-lg"></i>
+                    Procesar Personal
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- MODAL PERSONAL ADMINISTRATIVO CHUNK END -->

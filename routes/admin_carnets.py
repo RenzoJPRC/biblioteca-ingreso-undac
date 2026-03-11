@@ -8,6 +8,7 @@ from utils.queries_carnets import (
     buscar_alumnos_paginados,
     actualizar_vencimiento_individual,
     actualizar_vencimiento_masivo,
+    actualizar_vencimiento_global,
     procesar_excel_alumnos
 )
 
@@ -58,6 +59,17 @@ def actualizar_carnet_masivo():
     if not ids: return jsonify({'status': 'error', 'msg': 'No seleccionaste ningun alumno'})
 
     success, msg = actualizar_vencimiento_masivo(ids, accion)
+    if success:
+        return jsonify({'status': 'success', 'msg': msg})
+    else:
+        return jsonify({'status': 'error', 'msg': msg})
+
+@admin_carnets_bp.route('/actualizar_carnet_global', methods=['POST'])
+def actualizar_carnet_global():
+    data = request.json
+    accion = data.get('accion') # 'activar' | 'desactivar' | 'auto'
+
+    success, msg = actualizar_vencimiento_global(accion)
     if success:
         return jsonify({'status': 'success', 'msg': msg})
     else:

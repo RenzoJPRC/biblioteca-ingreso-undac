@@ -30,10 +30,10 @@ def obtener_datos_dashboard(f_inicio, f_fin):
     total_personal = cursor.fetchone()[0]
 
     # 2. Por Piso y Sede
-    cursor.execute(f"SELECT Piso, COUNT(*) FROM RegistroIngresos WHERE Sede='Central' AND {date_where} GROUP BY Piso", date_params)
+    cursor.execute(f"SELECT Piso, COUNT(*) FROM RegistroIngresos WHERE ISNULL(Sede, 'Central')='Central' AND {date_where} GROUP BY Piso", date_params)
     pisos_dict = {row[0]: row[1] for row in cursor.fetchall()}
 
-    cursor.execute(f"SELECT Sede, COUNT(*) FROM RegistroIngresos WHERE Sede!='Central' AND {date_where} GROUP BY Sede", date_params)
+    cursor.execute(f"SELECT Sede, COUNT(*) FROM RegistroIngresos WHERE ISNULL(Sede, 'Central')!='Central' AND {date_where} GROUP BY Sede", date_params)
     sedes_dict = {row[0]: row[1] for row in cursor.fetchall()}
 
     # 3. Gráfico Horas

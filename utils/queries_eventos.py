@@ -1,10 +1,10 @@
 import datetime
 from db import get_db_connection
 
-def obtener_agenda_eventos_hoy():
+def obtener_agenda_eventos_hoy(sede="Central"):
     """
     Retorna toda la agenda de eventos para el día de hoy, categorizándolos
-    como 'en_curso', 'proximo', o 'finalizado'.
+    como 'en_curso', 'proximo', o 'finalizado', filtrando por Sede.
     """
     try:
         conn = get_db_connection()
@@ -16,9 +16,10 @@ def obtener_agenda_eventos_hoy():
             FROM Eventos 
             WHERE FechaEvento = CAST(GETDATE() AS DATE)
             AND Estado != 'Cancelado'
+            AND NombreSede = ?
             ORDER BY HoraInicio ASC
         """
-        cursor.execute(sql)
+        cursor.execute(sql, (sede,))
         rows = cursor.fetchall()
         
         # Necesitamos la hora actual para calcular estados
@@ -235,3 +236,22 @@ def procesar_ingreso_evento(codigo, evento_id):
     finally:
         if 'conn' in locals() and conn:
             conn.close()
+
+def obtener_sede_evento(evento_id):
+    """
+    Retorna la sede a la que pertenece un evento. Por defecto 'Central'.
+    """
+    sede_evento = "Central"
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT NombreSede FROM Eventos WHERE EventoID = ?", (evento_id,))
+        row = cursor.fetchone()
+        if row and row[0]:
+            sede_evento = row[0]
+    except Exception as e:
+        print(f"Error fetching sede: {e}")
+    finally:
+        if 'conn' in locals() and conn:
+            conn.close()
+    return sede_evento

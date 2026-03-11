@@ -1,7 +1,7 @@
 import pyodbc
 from db import get_db_connection
 
-def verificar_dni_global(dni, ignora_tabla=None, ignora_id=None):
+def verificar_dni_global(dni, ignora_tabla=None, ignora_id=None, cursor=None):
     """
     Verifica si un DNI ya existe en cualquier tabla de registro (Alumnos, Egresados, Visitantes).
     Retorna (True, 'mensaje de error') si el DNI ya está en uso.
@@ -10,14 +10,18 @@ def verificar_dni_global(dni, ignora_tabla=None, ignora_id=None):
     Permite ignorar la búsqueda en un registro específico (útil para la edición).
     - ignora_tabla: 'Alumnos', 'Egresados' o 'Visitantes'
     - ignora_id: ID del registro que se está editando
+    - cursor: Cursor de BD opcional para reusar transacciones abiertas.
     """
     if not dni:
         return False, None
         
-    try:
+    local_cursor = False
+    if cursor is None:
         conn = get_db_connection()
         cursor = conn.cursor()
+        local_cursor = True
         
+    try:
         # 1. Verificar en Alumnos
         if ignora_tabla == 'Alumnos' and ignora_id:
             cursor.execute("SELECT 1 FROM Alumnos WHERE DNI = ? AND AlumnoID != ?", (dni, ignora_id))
@@ -56,5 +60,5 @@ def verificar_dni_global(dni, ignora_tabla=None, ignora_id=None):
         print(f"Error comprobando DNI: {e}")
         return True, "Error interno validando el DNI."
     finally:
-        if 'conn' in locals():
+        if local_cursor and 'conn' in locals():
             conn.close()
