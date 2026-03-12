@@ -1,5 +1,5 @@
 from db import get_db_connection
-from utils.validaciones import verificar_dni_global
+from utils.validaciones import verificar_dni_global, formatear_nombre_estetico
 import pandas as pd
 import io
 from utils.task_manager import update_task_progress, finish_task
@@ -129,7 +129,9 @@ def procesar_excel_egresados_async(file_bytes, task_id):
                 dni = dni[:-2]
 
             # Mapear a las columnas aceptando ambos nombres (los del nuevo excel y los del modal)
-            nombre = str(row.get('Apellidos y Nombres', row.get('APELLIDOS Y NOMBRE', ''))).strip()
+            nombre_raw = str(row.get('Apellidos y Nombres', row.get('APELLIDOS Y NOMBRE', ''))).strip()
+            nombre = formatear_nombre_estetico(nombre_raw)
+            
             codigo = str(row.get('Código Matrícula', row.get('CODIGO DE MATRICULA', ''))).strip()
             if codigo.endswith('.0'): 
                 codigo = codigo[:-2]
@@ -179,9 +181,13 @@ def procesar_excel_egresados_async(file_bytes, task_id):
                         """, (nombre, codigo, facultad, escuela, dni, c_personal, c_institucional, celular))
                     
                     contador += 1
+                    
+                    if contador % 500 == 0:
+                        conn.commit()
             
             # Update progress every 50 records
             if index % 50 == 0:
+                print(f"-> Procesados {index} egresados...")
                 update_task_progress(task_id, index, total=total_filas, msg=f"Guardando en BD: {index} de {total_filas}...")
             
         conn.commit()

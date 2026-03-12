@@ -1,10 +1,9 @@
 from db import get_db_connection
 from datetime import datetime
-from utils.validaciones import verificar_dni_global
+from utils.validaciones import verificar_dni_global, formatear_nombre_estetico
 import pandas as pd
 import io
 from utils.task_manager import update_task_progress, finish_task
-from utils.validaciones import verificar_dni_global
 
 def _get_global_expiration():
     """Calcula la fecha de vencimiento global según la lógica anual."""
@@ -168,9 +167,14 @@ def procesar_excel_alumnos_async(file_bytes, task_id):
             dni = str(row.get('DNI', '')).strip()
             if dni.endswith('.0'): dni = dni[:-2]
             
-            nombre = str(row.get('Apellidos y Nombres', row.get('APELLIDOS Y NOMBRE', ''))).strip()
+            # Buscar variaciones comunes de cabeceras
+            nombre_raw = str(row.get('Apellidos y Nombres', 
+                         row.get('APELLIDOS Y NOMBRES',
+                         row.get('NOMBRE COMPLETO', '')))).strip()
+            nombre = formatear_nombre_estetico(nombre_raw)
             
-            codigo = str(row.get('Código Matrícula', row.get('CODIGO DE MATRICULA', ''))).strip()
+            codigo = str(row.get('Código', 
+                     row.get('CÓDIGO', row.get('CODIGO DE MATRICULA', '')))).strip()
             if codigo.endswith('.0'): codigo = codigo[:-2]
             
             escuela = str(row.get('Escuela Profesional', row.get('ESCUELA', ''))).strip()
@@ -210,9 +214,13 @@ def procesar_excel_alumnos_async(file_bytes, task_id):
                     cursor.execute("INSERT INTO Alumnos (NombreCompleto, DNI, CodigoMatricula, Escuela, Semestre, Estado) VALUES (?,?,?,?,?,1)", 
                                    (nombre, dni, codigo, escuela, semestre))
                 contador += 1
+                
+                if contador % 500 == 0:
+                    conn.commit()
             
             # Reporte cada 50 filas
             if index % 50 == 0:
+                print(f"-> Procesados {index} alumnos...")
                 update_task_progress(task_id, index, total=total_filas, msg=f"Guardando en BD: {index} de {total_filas}...")
                 
         conn.commit()

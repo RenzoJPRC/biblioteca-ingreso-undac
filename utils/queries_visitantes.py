@@ -1,7 +1,7 @@
 import pandas as pd
 import io
 from db import get_db_connection
-from utils.validaciones import verificar_dni_global
+from utils.validaciones import verificar_dni_global, formatear_nombre_estetico
 from utils.task_manager import update_task_progress, finish_task
 
 def obtener_todos_visitantes():
@@ -95,7 +95,9 @@ def procesar_excel_visitantes_async(file_bytes, task_id):
             dni = str(row.get('DNI', '')).strip()
             if dni.endswith('.0'): dni = dni[:-2]
             
-            nombre = str(row.get('Nombre Completo', row.get('NOMBRE COMPLETO', ''))).strip()
+            nombre_raw = str(row.get('Nombre Completo', row.get('NOMBRE COMPLETO', ''))).strip()
+            nombre = formatear_nombre_estetico(nombre_raw)
+            
             inst = str(row.get('Institución', row.get('INSTITUCION', 'Sin Institución'))).strip()
             if not inst: inst = 'Sin Institución'
             
@@ -128,7 +130,11 @@ def procesar_excel_visitantes_async(file_bytes, task_id):
                     """, (nombre, dni, inst, correo))
                 contador += 1
                 
+                if contador % 500 == 0:
+                    conn.commit()
+                
             if idx % 50 == 0:
+                print(f"-> Procesados {idx} visitantes...")
                 update_task_progress(task_id, idx, total=total_filas, msg=f"Guardando en BD: {idx} de {total_filas}...")
             
         conn.commit()

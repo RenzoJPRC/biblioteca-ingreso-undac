@@ -1,4 +1,5 @@
 import pyodbc
+import re
 from db import get_db_connection
 
 def verificar_dni_global(dni, ignora_tabla=None, ignora_id=None, cursor=None):
@@ -62,3 +63,28 @@ def verificar_dni_global(dni, ignora_tabla=None, ignora_id=None, cursor=None):
     finally:
         if local_cursor and 'conn' in locals():
             conn.close()
+
+def formatear_nombre_estetico(nombre_completo):
+    """
+    Formatea un nombre al estilo 'APELLIDOS, Nombres'.
+    Si el nombre contiene coma, separa apellidos y nombres adecuadamente.
+    Si no contiene coma, lo convierte a Title Case inteligentemente.
+    """
+    if not nombre_completo:
+        return ""
+        
+    nombre = str(nombre_completo).strip()
+    
+    # Remover dobles espacios
+    nombre = re.sub(r'\s+', ' ', nombre)
+    
+    if ',' in nombre:
+        partes = nombre.split(',', 1)
+        apellidos = partes[0].strip().upper()
+        # Nombres en Title Case, manteniendo preposiciones o usando capitalize general
+        nombres = ' '.join(word.capitalize() for word in partes[1].strip().split())
+        return f"{apellidos}, {nombres}"
+    else:
+        # Si no hay coma, preferimos Title Case en lugar del confuso bloque en mayúsculas
+        # Ejemplo: "ROJAS CASTILLO RENZO" -> "Rojas Castillo Renzo"
+        return ' '.join(word.capitalize() for word in nombre.split())

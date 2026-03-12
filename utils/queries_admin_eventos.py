@@ -3,6 +3,7 @@ import io
 from datetime import datetime
 from db import get_db_connection
 from utils.task_manager import update_task_progress, finish_task
+from utils.validaciones import formatear_nombre_estetico
 
 def buscar_eventos(query='', page=1):
     items_por_pagina = 10
@@ -181,11 +182,13 @@ def procesar_excel_invitados_async(file_bytes, evento_id, task_id):
             if dni.endswith('.0'): dni = dni[:-2]
             
             # Buscar variaciones de la columna nombre
-            nombre = str(row.get('Nombre Completo', row.get('NOMBRE COMPLETO', ''))).strip()
-            if not nombre:
-                nombre = str(row.get('Apellidos y Nombres', row.get('APELLIDOS Y NOMBRES', ''))).strip()
-            if not nombre:
-                nombre = str(row.get('Nombres', row.get('NOMBRES', ''))).strip()
+            nombre_raw = str(row.get('Nombre Completo', row.get('NOMBRE COMPLETO', ''))).strip()
+            if not nombre_raw:
+                nombre_raw = str(row.get('Apellidos y Nombres', row.get('APELLIDOS Y NOMBRES', ''))).strip()
+            if not nombre_raw:
+                nombre_raw = str(row.get('Nombres', row.get('NOMBRES', ''))).strip()
+                
+            nombre = formatear_nombre_estetico(nombre_raw)
             
             inst = str(row.get('Institución', row.get('INSTITUCION', ''))).strip()
             
@@ -205,10 +208,14 @@ def procesar_excel_invitados_async(file_bytes, evento_id, task_id):
                     VALUES (?, ?, ?, ?)
                 """, (dni, nombre, inst, evento_id))
                 contador += 1
+                
+                if contador % 500 == 0:
+                    conn.commit()
             else:
                 errores.append(f"Fila {fila_num}: DNI {dni} ya registrado para este evento.")
                 
             if idx % 50 == 0:
+                print(f"-> Procesados {idx} invitados VIP...")
                 update_task_progress(task_id, idx, total=total_filas, msg=f"Guardando en BD: {idx} de {total_filas}...")
                 
         conn.commit()

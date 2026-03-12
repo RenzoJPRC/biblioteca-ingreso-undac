@@ -1,7 +1,7 @@
 import pandas as pd
 import io
 from db import get_db_connection
-from utils.validaciones import verificar_dni_global
+from utils.validaciones import verificar_dni_global, formatear_nombre_estetico
 from utils.task_manager import update_task_progress, finish_task
 
 def buscar_personal_administrativo(query, page, limit=20):
@@ -137,7 +137,9 @@ def procesar_excel_personal_async(file_bytes, task_id):
             dni = str(row.get('DNI', '')).strip()
             if dni.endswith('.0'): dni = dni[:-2]
 
-            nombre = str(row.get('Apellidos y Nombres', row.get('APELLIDOS Y NOMBRES', ''))).strip()
+            nombre_raw = str(row.get('Apellidos y Nombres', row.get('APELLIDOS Y NOMBRES', ''))).strip()
+            nombre = formatear_nombre_estetico(nombre_raw)
+            
             oficina = str(row.get('Oficina', row.get('OFICINA', ''))).strip()
             c_inst = str(row.get('Correo Institucional', row.get('CORREO INSTITUCIONAL', ''))).strip()
             c_per = str(row.get('Correo Personal', row.get('CORREO PERSONAL', ''))).strip()
@@ -174,8 +176,12 @@ def procesar_excel_personal_async(file_bytes, task_id):
                         VALUES (?,?,?,?,?,?)
                     """, (nombre, dni, oficina, c_inst, c_per, telefono))
                 contador += 1
+                
+                if contador % 500 == 0:
+                    conn.commit()
             
             if idx % 50 == 0:
+                print(f"-> Procesados {idx} registros de personal...")
                 update_task_progress(task_id, idx, total=total_filas, msg=f"Guardando en BD: {idx} de {total_filas}...")
             
         conn.commit()
