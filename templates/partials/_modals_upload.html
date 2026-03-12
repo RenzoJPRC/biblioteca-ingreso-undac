@@ -97,11 +97,11 @@
                 <table class="w-max text-left text-[10px] text-slate-600 font-mono">
                     <thead class="bg-emerald-100 text-emerald-800 uppercase font-bold border-b border-emerald-200">
                         <tr>
-                            <th class="px-2 py-1 border-r border-emerald-200">DNI</th>
-                            <th class="px-2 py-1 border-r border-emerald-200 whitespace-nowrap">APELLIDOS Y NOMBRE</th>
-                            <th class="px-2 py-1 border-r border-emerald-200 whitespace-nowrap">CODIGO DE MATRICULA</th>
+                            <th class="px-2 py-1 border-r border-emerald-200 whitespace-nowrap">DNI</th>
+                            <th class="px-2 py-1 border-r border-emerald-200 whitespace-nowrap">APELLIDOS Y NOMBRES</th>
+                            <th class="px-2 py-1 border-r border-emerald-200 whitespace-nowrap">CÓDIGO MATRÍCULA</th>
                             <th class="px-2 py-1 border-r border-emerald-200">FACULTAD</th>
-                            <th class="px-2 py-1 border-r border-emerald-200">ESCUELA</th>
+                            <th class="px-2 py-1 border-r border-emerald-200">ESCUELA PROFESIONAL</th>
                             <th class="px-2 py-1 border-r border-emerald-200 whitespace-nowrap">CORREO PERSONAL</th>
                             <th class="px-2 py-1 border-r border-emerald-200 whitespace-nowrap">CORREO INSTITUCIONAL
                             </th>
@@ -110,9 +110,10 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td class="px-2 py-1 border-r border-emerald-100">8-digitos</td>
+                            <td class="px-2 py-1 border-r border-emerald-100 text-[9px]">8-dígitos<br><span
+                                    class="text-slate-400 italic">(Opcional: 0 si no hay)</span></td>
                             <td class="px-2 py-1 border-r border-emerald-100">Texto</td>
-                            <td class="px-2 py-1 border-r border-emerald-100">Texto Num.</td>
+                            <td class="px-2 py-1 border-r border-emerald-100">Texto / Num.</td>
                             <td class="px-2 py-1 border-r border-emerald-100">Texto</td>
                             <td class="px-2 py-1 border-r border-emerald-100">Texto</td>
                             <td class="px-2 py-1 border-r border-emerald-100">Texto (Opcional)</td>
@@ -122,8 +123,8 @@
                     </tbody>
                 </table>
             </div>
-            <p class="text-[9px] text-slate-500 mt-2 italic">La fila 1 debe contener exactamente estos nombres de
-                columna.</p>
+            <p class="text-[9px] text-slate-500 mt-2 italic">El orden de las columnas no importa. Se ignorarán columnas
+                adicionales (ej. 'Alias'). Los nombres vacíos se saltarán automáticamente.</p>
         </div>
 
         <form id="form-excel-egresados" class="space-y-4"
@@ -156,32 +157,85 @@
         const statusDiv = document.getElementById(statusDivId);
         const btn = formElement.querySelector('button[type="submit"]');
 
-        // UI de carga
+        // UI de carga inicial
         statusDiv.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
-        statusDiv.classList.add('bg-blue-100', 'text-blue-700');
-        statusDiv.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> Procesando archivo...';
+        statusDiv.classList.add('bg-blue-100', 'text-blue-700', 'p-3', 'rounded-lg', 'text-sm', 'font-medium', 'flex', 'items-start', 'gap-2');
+        statusDiv.innerHTML = '<i class="ph ph-spinner animate-spin text-lg mt-0.5 shrink-0"></i> <div class="w-full">Iniciando carga de archivo...</div>';
         btn.disabled = true;
         btn.classList.add('opacity-50');
 
         fetch(url, { method: 'POST', body: formData })
             .then(r => r.json())
             .then(data => {
-                btn.disabled = false;
-                btn.classList.remove('opacity-50');
-                if (data.status === 'success') {
-                    statusDiv.className = 'p-3 rounded-lg text-sm bg-green-100 text-green-700 font-medium flex items-center gap-2';
-                    statusDiv.innerHTML = `<i class="ph ph-check-circle text-lg"></i> ${data.msg}`;
-                    setTimeout(() => location.reload(), 2000);
+                if (data.status === 'processing' && data.task_id) {
+                    iniciarPolling(data.task_id, statusDiv, btn);
+                } else if (data.status === 'success') {
+                    mostrarMensajeFinal(statusDiv, btn, data.msg, true);
                 } else {
-                    statusDiv.className = 'p-3 rounded-lg text-sm bg-red-100 text-red-700 font-medium flex items-center gap-2';
-                    statusDiv.innerHTML = `<i class="ph ph-warning-circle text-lg"></i> ${data.msg}`;
+                    mostrarMensajeFinal(statusDiv, btn, data.msg, false);
                 }
             })
             .catch(error => {
                 console.error(error);
-                btn.disabled = false;
-                statusDiv.innerText = "Error de conexión";
+                mostrarMensajeFinal(statusDiv, btn, "Error de conexión al subir el archivo.", false);
             });
+    }
+
+    function iniciarPolling(taskId, statusDiv, btn) {
+        const intervalo = setInterval(() => {
+            fetch(`/admin/upload_status/${taskId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'processing') {
+                        let text = `Procesando: ${data.progress} registros...`;
+
+                        // Si hay un total dictado por Pandas, dibujamos una barra de progreso
+                        if (data.total > 0) {
+                            const percent = Math.round((data.progress / data.total) * 100);
+                            text = `
+                                <div class="flex justify-between items-center mb-1 text-blue-800">
+                                    <span class="font-bold text-xs">${data.message || 'Procesando...'}</span>
+                                    <span class="font-bold text-xs">${percent}%</span>
+                                </div>
+                                <div class="w-full bg-blue-200/50 rounded-full h-2 mb-1 overflow-hidden">
+                                    <div class="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out" style="width: ${percent}%"></div>
+                                </div>
+                                <div class="text-[10px] text-blue-600/80 font-mono text-right">${data.progress} / ${data.total} filas</div>
+                            `;
+                        } else {
+                            text = `<div class="mt-0.5 text-blue-800">${data.message || text}</div>`;
+                        }
+
+                        statusDiv.innerHTML = `<i class="ph ph-spinner animate-spin text-lg mt-1 shrink-0 text-blue-600"></i> <div class="w-full">${text}</div>`;
+                    }
+                    else if (data.status === 'completed') {
+                        clearInterval(intervalo);
+                        mostrarMensajeFinal(statusDiv, btn, data.message, true);
+                    }
+                    else if (data.status === 'error') {
+                        clearInterval(intervalo);
+                        mostrarMensajeFinal(statusDiv, btn, data.message, false);
+                    }
+                })
+                .catch(err => {
+                    console.error("Error consultando estado del Polling:", err);
+                });
+        }, 1000); // Consultar cada 1 segundo
+    }
+
+    function mostrarMensajeFinal(statusDiv, btn, msg, isSuccess) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50');
+        statusDiv.classList.remove('bg-blue-100', 'text-blue-700');
+
+        if (isSuccess) {
+            statusDiv.classList.add('bg-green-100', 'text-green-700');
+            statusDiv.innerHTML = `<i class="ph ph-check-circle text-lg mt-0.5 shrink-0"></i> <div class="w-full text-left">${msg}</div>`;
+            setTimeout(() => location.reload(), 4000); // 4 segs para que lean si hay errores ignorados
+        } else {
+            statusDiv.classList.add('bg-red-100', 'text-red-700');
+            statusDiv.innerHTML = `<i class="ph ph-warning-circle text-lg mt-0.5 shrink-0"></i> <div class="w-full text-left">${msg}</div>`;
+        }
     }
 </script>
 
@@ -316,7 +370,7 @@
                         <tr>
                             <td class="px-2 py-1 border-r border-purple-100">8-digitos</td>
                             <td class="px-2 py-1 border-r border-purple-100">Texto</td>
-                            <td class="px-2 py-1 border-r border-purple-100">Texto</td>
+                            <td class="px-2 py-1 border-r border-purple-100">Texto (Opcional)</td>
                             <td class="px-2 py-1 border-r border-purple-100">Texto (Opcional)</td>
                             <td class="px-2 py-1 border-r border-purple-100">Texto (Opcional)</td>
                             <td class="px-2 py-1">Texto (Opcional)</td>

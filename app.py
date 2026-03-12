@@ -9,6 +9,7 @@ from routes.admin_carnets import admin_carnets_bp
 from routes.admin_egresados import admin_egresados_bp
 from routes.admin_personal import admin_personal_bp
 from routes.admin_eventos import admin_eventos_bp
+from routes.admin_tasks import admin_tasks_bp
 
 app = Flask(__name__)
 
@@ -22,6 +23,7 @@ app.register_blueprint(admin_carnets_bp)
 app.register_blueprint(admin_egresados_bp)
 app.register_blueprint(admin_personal_bp)
 app.register_blueprint(admin_eventos_bp)
+app.register_blueprint(admin_tasks_bp)
 
 if __name__ == '__main__':
     # Configura tu IP y Puerto aquí - 0.0.0.0 permite conexiones desde cualquier IP

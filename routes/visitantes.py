@@ -1,5 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify
-from utils.queries_visitantes import obtener_todos_visitantes, registrar_nuevo_visitante, actualizar_visitante, borrar_visitante, procesar_excel_visitantes
+from utils.queries_visitantes import obtener_todos_visitantes, registrar_nuevo_visitante, actualizar_visitante, borrar_visitante, procesar_excel_visitantes_async
+import threading
+from utils.task_manager import create_task
 
 visitantes_bp = Blueprint('visitantes', __name__, url_prefix='/admin')
 
@@ -26,8 +28,22 @@ def subir_excel_visitantes():
         return jsonify({'status': 'error', 'msg': 'Falta archivo'})
     
     file = request.files['archivo_excel_vis']
-    resultado = procesar_excel_visitantes(file)
-    return jsonify(resultado)
+    if file.filename == '':
+        return jsonify({'status': 'error', 'msg': 'Nombre vacío'})
+        
+    try:
+        print("1. Recibiendo archivo Excel de Visitantes y delegando a segundo plano...")
+        file_bytes = file.read()
+        task_id = create_task()
+        
+        thread = threading.Thread(target=procesar_excel_visitantes_async, args=(file_bytes, task_id))
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({'status': 'processing', 'task_id': task_id})
+    except Exception as e:
+        print("ERROR CRÍTICO AL LEER EXCEL:", str(e))
+        return jsonify({'status': 'error', 'msg': str(e)})
 
 @visitantes_bp.route('/eliminar_visitante/<int:id>', methods=['DELETE'])
 def eliminar_visitante(id):

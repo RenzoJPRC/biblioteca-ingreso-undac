@@ -1,6 +1,8 @@
 import pandas as pd
+import io
 from datetime import datetime
 from db import get_db_connection
+from utils.task_manager import update_task_progress, finish_task
 
 def buscar_eventos(query='', page=1):
     items_por_pagina = 10
@@ -155,32 +157,45 @@ def borrar_evento(evento_id):
     finally:
         if 'conn' in locals() and conn: conn.close()
 
-def procesar_excel_invitados(file, evento_id):
-    if file.filename == '': 
-        return {'status': 'error', 'msg': 'Archivo no seleccionado'}
-
+def procesar_excel_invitados_async(file_bytes, evento_id, task_id):
+    conn = get_db_connection()
+    errores = []
+    contador = 0
+    
     try:
-        df = pd.read_excel(file, dtype={'DNI': str})
+        update_task_progress(task_id, 0, msg="Leyendo archivo Excel de Invitados VIP...")
+        df = pd.read_excel(io.BytesIO(file_bytes))
         df = df.fillna('')
-        conn = get_db_connection()
+        df.columns = df.columns.astype(str).str.strip()
+        
+        total_filas = len(df)
+        update_task_progress(task_id, 0, total=total_filas, msg=f"Validando cabeceras y preparando {total_filas} registros...")
+        
         cursor = conn.cursor()
-        contador = 0
         
         # Solo DNI y Nombre son obligatorios
-        for _, row in df.iterrows():
+        for idx, row in df.iterrows():
+            fila_num = idx + 2
+            
             dni = str(row.get('DNI', '')).strip()
+            if dni.endswith('.0'): dni = dni[:-2]
             
             # Buscar variaciones de la columna nombre
-            nombre = row.get('NOMBRE COMPLETO', '')
+            nombre = str(row.get('Nombre Completo', row.get('NOMBRE COMPLETO', ''))).strip()
             if not nombre:
-                nombre = row.get('APELLIDOS Y NOMBRES', '')
+                nombre = str(row.get('Apellidos y Nombres', row.get('APELLIDOS Y NOMBRES', ''))).strip()
             if not nombre:
-                nombre = row.get('NOMBRES', '')
-            nombre = nombre.strip()
+                nombre = str(row.get('Nombres', row.get('NOMBRES', ''))).strip()
             
-            inst = row.get('INSTITUCION', '').strip()
+            inst = str(row.get('Institución', row.get('INSTITUCION', ''))).strip()
             
-            if not dni or len(dni) < 5 or not nombre: continue
+            if not dni or len(dni) < 5:
+                errores.append(f"Fila {fila_num}: Falta DNI válido.")
+                continue
+                
+            if not nombre:
+                errores.append(f"Fila {fila_num}: Falta nombre válido.")
+                continue
             
             # Check si ya está invitado al mismo evento
             cursor.execute("SELECT InvitadoID FROM InvitadosEvento WHERE DNI = ? AND EventoID = ?", (dni, evento_id))
@@ -190,10 +205,24 @@ def procesar_excel_invitados(file, evento_id):
                     VALUES (?, ?, ?, ?)
                 """, (dni, nombre, inst, evento_id))
                 contador += 1
+            else:
+                errores.append(f"Fila {fila_num}: DNI {dni} ya registrado para este evento.")
+                
+            if idx % 50 == 0:
+                update_task_progress(task_id, idx, total=total_filas, msg=f"Guardando en BD: {idx} de {total_filas}...")
                 
         conn.commit()
-        return {'status': 'success', 'msg': f'Se agregaron {contador} invitados al evento con éxito.'}
+        msg = f'Se agregaron {contador} de {total_filas} invitados VIP con éxito.'
+        if errores:
+            detalles = "<br> • ".join(errores[:5])
+            if len(errores) > 5: detalles += f"<br> • ... y {len(errores)-5} más."
+            msg += f'<div class="mt-2 text-xs text-rose-600 bg-rose-50 p-2 rounded border border-rose-200"><p class="font-bold mb-1">Filas omitidas ({len(errores)}):</p> • {detalles}</div>'
+            if contador == 0:
+                finish_task(task_id, success=False, msg=msg)
+                return
+                
+        finish_task(task_id, success=True, msg=msg)
     except Exception as e:
-        return {'status': 'error', 'msg': f'Error procesando Excel: {str(e)}'}
+        finish_task(task_id, success=False, msg=f'Error fatal al procesar Excel VIP: {str(e)}')
     finally:
-        if 'conn' in locals() and conn: conn.close()
+        conn.close()

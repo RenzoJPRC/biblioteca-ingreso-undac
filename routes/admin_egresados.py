@@ -3,12 +3,17 @@ import pandas as pd
 import sys
 import os
 
+import threading
+from utils.task_manager import create_task
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.queries_egresados import (
     buscar_egresados_paginados,
     guardar_egresado_individual,
-    procesar_excel_egresados,
-    eliminar_egresado_permanente
+    procesar_excel_egresados_async,
+    eliminar_egresado_permanente,
+    eliminar_egresados_masivo,
+    vaciar_egresados_db
 )
 
 admin_egresados_bp = Blueprint('admin_egresados', __name__, url_prefix='/admin')
@@ -64,20 +69,46 @@ def subir_excel_egresados():
     if file.filename == '': return jsonify({'status': 'error', 'msg': 'Nombre vacío'})
 
     try:
-        df = pd.read_excel(file, dtype={'DNI': str, 'CELULAR': str, 'CODIGO DE MATRICULA': str})
-        df = df.fillna('')
+        print("1. Recibiendo archivo Excel de Egresados y delegando a segundo plano...")
         
-        success, msg = procesar_excel_egresados(df)
-        if success:
-            return jsonify({'status': 'success', 'msg': msg})
-        else:
-            return jsonify({'status': 'error', 'msg': msg})
+        file_bytes = file.read()
+        task_id = create_task()
+        
+        # Iniciar hilo en segundo plano
+        thread = threading.Thread(target=procesar_excel_egresados_async, args=(file_bytes, task_id))
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({'status': 'processing', 'task_id': task_id})
     except Exception as e:
+        print("ERROR CRÍTICO AL LEER EXCEL:", str(e))
         return jsonify({'status': 'error', 'msg': str(e)})
 
 @admin_egresados_bp.route('/eliminar_egresado/<int:id>', methods=['DELETE'])
 def eliminar_egresado(id):
     success, msg = eliminar_egresado_permanente(id)
+    if success:
+        return jsonify({'status': 'success', 'msg': msg})
+    else:
+        return jsonify({'status': 'error', 'msg': msg})
+
+@admin_egresados_bp.route('/eliminar_egresados_masivo', methods=['POST'])
+def eliminar_egresados_masivos_route():
+    data = request.json
+    ids = data.get('ids', [])
+    
+    if not ids:
+        return jsonify({'status': 'error', 'msg': 'No se enviaron IDs para eliminar.'})
+        
+    success, msg = eliminar_egresados_masivo(ids)
+    if success:
+        return jsonify({'status': 'success', 'msg': msg})
+    else:
+        return jsonify({'status': 'error', 'msg': msg})
+
+@admin_egresados_bp.route('/vaciar_egresados', methods=['DELETE'])
+def vaciar_egresados_route():
+    success, msg = vaciar_egresados_db()
     if success:
         return jsonify({'status': 'success', 'msg': msg})
     else:

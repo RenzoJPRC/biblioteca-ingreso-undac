@@ -1,6 +1,10 @@
 from db import get_db_connection
 from datetime import datetime
 from utils.validaciones import verificar_dni_global
+import pandas as pd
+import io
+from utils.task_manager import update_task_progress, finish_task
+from utils.validaciones import verificar_dni_global
 
 def _get_global_expiration():
     """Calcula la fecha de vencimiento global según la lógica anual."""
@@ -140,38 +144,90 @@ def actualizar_vencimiento_global(accion):
     finally:
         conn.close()
 
-def procesar_excel_alumnos(df):
+def procesar_excel_alumnos_async(file_bytes, task_id):
     conn = get_db_connection()
     contador = 0
+    errores = []
     try:
+        update_task_progress(task_id, 0, msg="Leyendo archivo Excel de Alumnos...")
+        
+        # Lectura sin tipo rígido
+        df = pd.read_excel(io.BytesIO(file_bytes))
+        df = df.fillna('')
+        df.columns = df.columns.astype(str).str.strip()
+        
+        total_filas = len(df)
+        update_task_progress(task_id, 0, total=total_filas, msg=f"Validando cabeceras y preparando {total_filas} registros...")
+        
         cursor = conn.cursor()
-        for _, row in df.iterrows():
-            dni = str(row.get('DNI', '')).strip()
-            nombre = row.get('APELLIDOS Y NOMBRE', '')
-            codigo = str(row.get('CODIGO DE MATRICULA', '')).strip()
-            escuela = row.get('ESCUELA', '')
-            semestre = row.get('SEMESTRE', '')
+        
+        for index, row in df.iterrows():
+            num_fila = index + 2
             
-            if not dni or len(dni) < 5: continue
+            # Limpieza exhaustiva
+            dni = str(row.get('DNI', '')).strip()
+            if dni.endswith('.0'): dni = dni[:-2]
+            
+            nombre = str(row.get('Apellidos y Nombres', row.get('APELLIDOS Y NOMBRE', ''))).strip()
+            
+            codigo = str(row.get('Código Matrícula', row.get('CODIGO DE MATRICULA', ''))).strip()
+            if codigo.endswith('.0'): codigo = codigo[:-2]
+            
+            escuela = str(row.get('Escuela Profesional', row.get('ESCUELA', ''))).strip()
+            semestre = str(row.get('Semestre', row.get('SEMESTRE', ''))).strip()
+            if semestre.endswith('.0'): semestre = semestre[:-2]
+            
+            if not nombre: 
+                errores.append(f"Fila {num_fila}: Celda de nombre vacía.")
+                continue
 
             # --- VALIDACIÓN GLOBAL ---
-            err_bool, _ = verificar_dni_global(dni, ignora_tabla='Alumnos', cursor=cursor)
-            if err_bool: 
-                continue # Saltar alumnos conflictivos silenciosamente
-            # -------------------------
+            skip_row = False
+            if dni not in ['0', '', '0.0'] and len(dni) >= 5:
+                err_bool, msg_valid = verificar_dni_global(dni, ignora_tabla='Alumnos', cursor=cursor)
+                if err_bool: 
+                    errores.append(f"Fila {num_fila}: {msg_valid} - DNI {dni}")
+                    skip_row = True
+            elif not codigo:
+                # Si ni DNI válido ni código existe, no podemos identificar
+                errores.append(f"Fila {num_fila}: DNI y Código ausentes o inválidos.")
+                skip_row = True
+                
+            if not skip_row:
+                # Buscar por código primero
+                cursor.execute("SELECT AlumnoID FROM Alumnos WHERE CodigoMatricula = ? AND CodigoMatricula != ''", (codigo,))
+                existe = cursor.fetchone()
+                
+                # Si no existe por código, buscar por DNI
+                if not existe and dni not in ['0', '', '0.0'] and len(dni) >= 5:
+                    cursor.execute("SELECT AlumnoID FROM Alumnos WHERE DNI = ?", (dni,))
+                    existe = cursor.fetchone()
 
-            cursor.execute("SELECT AlumnoID FROM Alumnos WHERE DNI = ?", (dni,))
-            if cursor.fetchone():
-                cursor.execute("UPDATE Alumnos SET NombreCompleto=?, CodigoMatricula=?, Escuela=?, Semestre=?, Estado=1 WHERE DNI=?", 
-                               (nombre, codigo, escuela, semestre, dni))
-            else:
-                cursor.execute("INSERT INTO Alumnos (NombreCompleto, DNI, CodigoMatricula, Escuela, Semestre) VALUES (?,?,?,?,?)", 
-                               (nombre, dni, codigo, escuela, semestre))
-            contador += 1
+                if existe:
+                    cursor.execute("UPDATE Alumnos SET NombreCompleto=?, CodigoMatricula=?, Escuela=?, Semestre=?, Estado=1 WHERE AlumnoID=?", 
+                                   (nombre, codigo, escuela, semestre, existe[0]))
+                else:
+                    cursor.execute("INSERT INTO Alumnos (NombreCompleto, DNI, CodigoMatricula, Escuela, Semestre, Estado) VALUES (?,?,?,?,?,1)", 
+                                   (nombre, dni, codigo, escuela, semestre))
+                contador += 1
             
+            # Reporte cada 50 filas
+            if index % 50 == 0:
+                update_task_progress(task_id, index, total=total_filas, msg=f"Guardando en BD: {index} de {total_filas}...")
+                
         conn.commit()
-        return True, f'Procesados {contador} alumnos.'
+        
+        msg = f'Procesados {contador} de {total_filas} alumnos con éxito.'
+        if errores:
+            detalles = "<br> • ".join(errores[:5])
+            if len(errores) > 5: detalles += f"<br> • ... y {len(errores)-5} más."
+            msg += f'<div class="mt-2 text-xs text-rose-600 bg-rose-50 p-2 rounded border border-rose-200"><p class="font-bold mb-1">Filas omitidas ({len(errores)}):</p> • {detalles}</div>'
+            if contador == 0:
+                finish_task(task_id, success=False, msg=msg)
+                return
+                
+        finish_task(task_id, success=True, msg=msg)
     except Exception as e:
-        return False, str(e)
+        finish_task(task_id, success=False, msg=f"Error fatal: {str(e)}")
     finally:
         conn.close()

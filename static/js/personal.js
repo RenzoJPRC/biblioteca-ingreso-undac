@@ -1,6 +1,7 @@
 // FUNCIONES JS AISLADAS DE ADMIN PERSONAL
 let currentPage = 1;
 let totalPages = 1;
+let seleccionadosPersonal = new Set();
 
 function inicializarAdminPersonal() {
     buscarPersonal();
@@ -49,8 +50,15 @@ function buscarPersonal(pagina = 1, silent = false) {
             } else {
                 let html = "";
                 data.data.forEach(p => {
+                    const isSeleccionado = seleccionadosPersonal.has(String(p.id));
+
                     html += `
-                        <tr class="hover:bg-slate-50 transition-colors group">
+                        <tr class="hover:bg-slate-50 transition-colors group ${isSeleccionado ? 'bg-purple-50/50' : ''}">
+                            <td class="px-6 py-3 text-center">
+                                <input type="checkbox" value="${p.id}" onclick="toggleSeleccionPersonal(this, '${p.id}')"
+                                    ${isSeleccionado ? 'checked' : ''}
+                                    class="check-fila-personal w-4 h-4 text-purple-600 bg-slate-100 border-slate-300 rounded focus:ring-purple-500 focus:ring-2 cursor-pointer transition-all">
+                            </td>
                             <td class="px-6 py-3 font-mono text-slate-500">${p.dni}</td>
                             <td class="px-6 py-3 font-bold text-slate-700">${p.nombre}</td>
                             <td class="px-6 py-3 text-slate-600">${p.oficina}</td>
@@ -76,6 +84,7 @@ function buscarPersonal(pagina = 1, silent = false) {
                     `;
                 });
                 tbody.innerHTML = html;
+                actualizarEstadoSeccionPersonal();
             }
             actualizarControlesPaginacion();
         })
@@ -207,5 +216,111 @@ function eliminarPersonal(id, nombre) {
                     if (typeof showToast !== 'undefined') showToast(res.msg, "error");
                 }
             });
+    }
+}
+
+// --- ACCIONES MASIVAS E INTERACTIVIDAD PARA PERSONAL ADMINISTRATIVO ---
+
+function toggleSeleccionPersonal(checkbox, id) {
+    if (checkbox.checked) {
+        seleccionadosPersonal.add(String(id));
+        checkbox.closest('tr').classList.add('bg-purple-50/50');
+    } else {
+        seleccionadosPersonal.delete(String(id));
+        checkbox.closest('tr').classList.remove('bg-purple-50/50');
+        document.getElementById('check-todos-personal').checked = false;
+    }
+    actualizarBarraFlotantePersonal();
+}
+
+function seleccionarTodosPersonal(checkboxMaestro) {
+    const checkboxes = document.querySelectorAll('.check-fila-personal');
+    checkboxes.forEach(cb => {
+        cb.checked = checkboxMaestro.checked;
+        toggleSeleccionPersonal(cb, cb.value);
+    });
+}
+
+function actualizarEstadoSeccionPersonal() {
+    const checkboxes = document.querySelectorAll('.check-fila-personal');
+    if (checkboxes.length === 0) return;
+
+    const todosSeleccionados = Array.from(checkboxes).every(cb => cb.checked);
+    document.getElementById('check-todos-personal').checked = todosSeleccionados;
+    actualizarBarraFlotantePersonal();
+}
+
+function actualizarBarraFlotantePersonal() {
+    const barra = document.getElementById('barra-acciones-personal');
+    const contador = document.getElementById('contador-seleccionados');
+    if (!barra || !contador) return;
+
+    if (seleccionadosPersonal.size > 0) {
+        contador.innerText = seleccionadosPersonal.size;
+        barra.classList.remove('hidden');
+    } else {
+        barra.classList.add('hidden');
+    }
+}
+
+function accionMasivaPersonal(accion) {
+    if (seleccionadosPersonal.size === 0) return;
+
+    let confirmMsg = `¿Seguro que quieres ${accion.toUpperCase()} a los ${seleccionadosPersonal.size} registros seleccionados?`;
+    if (accion === 'eliminar') {
+        confirmMsg = `⚠️ ¡ADVERTENCIA! ¿Estás SEGURO de ELIMINAR permanentemente a los ${seleccionadosPersonal.size} registros de personal administrativo seleccionados?\nEsta acción es irreversible e impactará sus registros de visitas vinculados.`;
+    }
+
+    if (!confirm(confirmMsg)) return;
+
+    const ids = Array.from(seleccionadosPersonal);
+
+    fetch(`/admin/eliminar_personal_masivo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: ids })
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                seleccionadosPersonal.clear();
+                actualizarBarraFlotantePersonal();
+                document.getElementById('check-todos-personal').checked = false;
+                if (typeof showToast !== 'undefined') showToast(data.msg, "success");
+                buscarPersonal(currentPage);
+            } else {
+                alert('Error: ' + data.msg);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Error de conexión con el servidor.');
+        });
+}
+
+function accionGlobalPersonal(accion) {
+    if (accion === 'vaciar') {
+        const code = Math.floor(1000 + Math.random() * 9000);
+        const promptStr = prompt(`⚠️ ¡PELIGRO CRÍTICO! ⚠️\nEstás a punto de VACIAR TODA LA TABLA DE PERSONAL ADMINISTRATIVO de la base de datos central de la UNDAC.\n\nEsto borrará cientos de registros y no se puede recuperar.\n\nEscribe el código "${code}" para autorizar la destrucción masiva de la tabla:`);
+
+        if (promptStr !== String(code)) {
+            alert("Código de confirmación incorrecto. Destrucción abortada.");
+            return;
+        }
+
+        fetch('/admin/vaciar_personal', {
+            method: 'DELETE'
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert("✅ " + data.msg);
+                    seleccionadosPersonal.clear();
+                    buscarPersonal(1);
+                } else {
+                    alert("Error crítico: " + data.msg);
+                }
+            })
+            .catch(err => alert('Fallo de conexión crítico.'));
     }
 }

@@ -18,14 +18,61 @@
 
 <div class="flex-1 overflow-y-auto p-6 space-y-4 flex flex-col h-full">
 
-    <!-- BUSCADOR -->
-    {% with
-    search_title="Buscar Egresado",
-    search_placeholder="Ingresa DNI, Código o Nombre...",
-    base_color="emerald"
-    %}
-    {% include "partials/_search_bar.html" %}
-    {% endwith %}
+    <!-- BUSCADOR Y ACCIONES GLOBALES -->
+    <div class="flex items-center justify-between gap-4">
+        <div class="flex-1">
+            {% with
+            search_title="Buscar Egresado",
+            search_placeholder="Ingresa DNI, Código o Nombre...",
+            base_color="emerald"
+            %}
+            {% include "partials/_search_bar.html" %}
+            {% endwith %}
+        </div>
+
+        <!-- BOTONES GLOBALES DE BASE DE DATOS -->
+        <div class="flex gap-2 self-end mb-2 shrink-0">
+            <div class="relative group">
+                <button
+                    class="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 px-4 py-2 pt-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all h-[42px]">
+                    <i class="ph ph-globe text-lg text-emerald-500"></i> Acciones Globales
+                    <i class="ph-bold ph-caret-down text-slate-400 text-xs ml-1"></i>
+                </button>
+
+                <!-- Menú Desplegable -->
+                <div
+                    class="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 transform origin-top-right scale-95 group-hover:scale-100">
+                    <div class="p-3 border-b border-slate-50 bg-slate-50 rounded-t-xl">
+                        <p
+                            class="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                            <i class="ph-fill ph-warning text-rose-500"></i> Aplica a toda la BD
+                        </p>
+                    </div>
+                    <div class="p-2 flex flex-col gap-1">
+                        <button onclick="accionGlobalEgresados('vaciar')"
+                            class="w-full text-left px-3 py-2.5 text-sm font-bold text-rose-700 hover:bg-rose-50 rounded-lg flex items-center gap-2 transition-colors">
+                            <i class="ph ph-trash text-lg"></i> Vaciar Todos (Peligro)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BARRA DE ACCIONES MASIVAS (Oculta por defecto) -->
+    <div id="barra-acciones-egresados"
+        class="hidden bg-slate-800 text-white p-4 rounded-xl shadow-lg flex items-center justify-between animate-fade-in shrink-0">
+        <div class="font-bold flex items-center gap-2">
+            <i class="ph ph-check-square text-xl text-emerald-400"></i>
+            <span id="contador-seleccionados" class="text-xl">0</span> seleccionados
+        </div>
+        <div class="flex gap-3">
+            <button onclick="accionMasivaEgresados('eliminar')"
+                class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors">
+                <i class="ph ph-trash"></i> Eliminar Seleccionados
+            </button>
+        </div>
+    </div>
 
     <!-- TABLA DE RESULTADOS -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col min-h-0"
@@ -39,6 +86,10 @@
             <table class="w-full text-left border-collapse">
                 <thead class="bg-slate-50 text-xs uppercase text-slate-400 font-bold sticky top-0 z-10 shadow-sm">
                     <tr>
+                        <th class="px-6 py-3 bg-slate-50 border-b border-slate-200 w-12 text-center">
+                            <input type="checkbox" id="check-todos" onclick="seleccionarTodos(this)"
+                                class="w-4 h-4 text-emerald-600 bg-slate-100 border-slate-300 rounded focus:ring-emerald-500 focus:ring-2 cursor-pointer transition-all">
+                        </th>
                         <th class="px-6 py-3 bg-slate-50 border-b border-slate-200">Egresado</th>
                         <th class="px-6 py-3 bg-slate-50 border-b border-slate-200">DNI / Código</th>
                         <th class="px-6 py-3 bg-slate-50 border-b border-slate-200">Facultad / Escuela</th>
@@ -150,6 +201,7 @@
 <script>
     let currentPage = 1;
     let totalPages = 1;
+    let seleccionados = new Set(); // Almacenar IDs seleccionados
 
     window.onload = function () {
         buscarEgresado();
@@ -197,8 +249,15 @@
                         ? `<span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-xs font-bold">ACTIVO</span>`
                         : `<span class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">INACTIVO</span>`;
 
+                    const isSeleccionado = seleccionados.has(String(egre.id));
+
                     html += `
-                        <tr class="hover:bg-slate-50 transition-colors group">
+                        <tr class="hover:bg-slate-50 transition-colors group ${isSeleccionado ? 'bg-emerald-50/50' : ''}">
+                        <td class="px-6 py-3 border-b border-slate-50 text-center">
+                            <input type="checkbox" value="${egre.id}" onclick="toggleSeleccion(this, '${egre.id}')"
+                                ${isSeleccionado ? 'checked' : ''}
+                                class="check-fila w-4 h-4 text-emerald-600 bg-slate-100 border-slate-300 rounded focus:ring-emerald-500 focus:ring-2 cursor-pointer transition-all">
+                        </td>
                         <td class="px-6 py-3 font-medium text-slate-700 border-b border-slate-50">${egre.nombre}</td>
                         <td class="px-6 py-3 border-b border-slate-50">
                             <div class="text-slate-600 font-bold">${egre.dni}</div>
@@ -227,7 +286,7 @@
                 });
 
                 tbody.innerHTML = html;
-
+                actualizarEstadoSeccion();
                 actualizarControlesPaginacion();
             })
             .catch(err => console.error("Error cargando egresados:", err));
@@ -374,6 +433,110 @@
                 console.error(err);
                 alert('Error al conectar con el servidor.');
             });
+    }
+
+    // --- ACCIONES MASIVAS E INTERACTIVIDAD ---
+
+    function toggleSeleccion(checkbox, id) {
+        if (checkbox.checked) {
+            seleccionados.add(String(id));
+            checkbox.closest('tr').classList.add('bg-emerald-50/50');
+        } else {
+            seleccionados.delete(String(id));
+            checkbox.closest('tr').classList.remove('bg-emerald-50/50');
+            document.getElementById('check-todos').checked = false;
+        }
+        actualizarBarraFlotante();
+    }
+
+    function seleccionarTodos(checkboxMaestro) {
+        const checkboxes = document.querySelectorAll('.check-fila');
+        checkboxes.forEach(cb => {
+            cb.checked = checkboxMaestro.checked;
+            toggleSeleccion(cb, cb.value);
+        });
+    }
+
+    function actualizarEstadoSeccion() {
+        const checkboxes = document.querySelectorAll('.check-fila');
+        if (checkboxes.length === 0) return;
+
+        const todosSeleccionados = Array.from(checkboxes).every(cb => cb.checked);
+        document.getElementById('check-todos').checked = todosSeleccionados;
+        actualizarBarraFlotante();
+    }
+
+    function actualizarBarraFlotante() {
+        const barra = document.getElementById('barra-acciones-egresados');
+        const contador = document.getElementById('contador-seleccionados');
+
+        if (seleccionados.size > 0) {
+            contador.innerText = seleccionados.size;
+            barra.classList.remove('hidden');
+        } else {
+            barra.classList.add('hidden');
+        }
+    }
+
+    function accionMasivaEgresados(accion) {
+        if (seleccionados.size === 0) return;
+
+        let confirmMsg = `¿Seguro que quieres ${accion.toUpperCase()} a los ${seleccionados.size} egresados seleccionados?`;
+        if (accion === 'eliminar') {
+            confirmMsg = `⚠️ ¡ADVERTENCIA! ¿Estás SEGURO de ELIMINAR permanentemente a los ${seleccionados.size} egresados seleccionados? Esta acción no se puede deshacer.`;
+        }
+
+        if (!confirm(confirmMsg)) return;
+
+        const ids = Array.from(seleccionados);
+
+        fetch(`/admin/eliminar_egresados_masivo`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: ids })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    seleccionados.clear();
+                    actualizarBarraFlotante();
+                    document.getElementById('check-todos').checked = false;
+                    buscarEgresado(currentPage);
+                } else {
+                    alert('Error: ' + data.msg);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Error de conexión.');
+            });
+    }
+
+    function accionGlobalEgresados(accion) {
+        if (accion === 'vaciar') {
+            const code = Math.floor(1000 + Math.random() * 9000);
+            const promptStr = prompt(`⚠️ ¡PELIGRO CRÍTICO! ⚠️\nEstás a punto de VACIAR TODA LA TABLA DE EGRESADOS de la base de datos de la UNDAC.\nEsta acción borrará miles de registros permanentemente y NO SE PUEDE RECUPERAR. \n\nEscribe el código "${code}" para confirmar la destrucción masiva:`);
+
+            if (promptStr !== String(code)) {
+                alert("Código de seguridad incorrecto. Operación abortada.");
+                return;
+            }
+
+            fetch('/admin/vaciar_egresados', {
+                method: 'DELETE'
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert("✅ " + data.msg);
+                        seleccionados.clear();
+                        buscarEgresado(1);
+                    } else {
+                        alert("Error: " + data.msg);
+                    }
+                })
+                .catch(err => alert('Error de conexión con el servidor.'));
+        }
     }
 
 </script>

@@ -2,6 +2,7 @@ import pandas as pd
 import io
 from db import get_db_connection
 from utils.validaciones import verificar_dni_global
+from utils.task_manager import update_task_progress, finish_task
 
 def buscar_personal_administrativo(query, page, limit=20):
     offset = (page - 1) * limit
@@ -114,67 +115,128 @@ def borrar_personal_administrativo(id_per):
     finally:
         if 'conn' in locals(): conn.close()
 
-def procesar_excel_personal(file):
-    if file.filename == '': 
-        return {'status': 'error', 'msg': 'Nombre vacío'}
-
+def procesar_excel_personal_async(file_bytes, task_id):
+    conn = get_db_connection()
+    errores = []
+    contador = 0
+    
     try:
-        df = pd.read_excel(file, dtype={'DNI': str, 'TELEFONO': str})
+        update_task_progress(task_id, 0, msg="Leyendo archivo Excel de Personal...")
+        df = pd.read_excel(io.BytesIO(file_bytes))
         df = df.fillna('')
-        conn = get_db_connection()
+        df.columns = df.columns.astype(str).str.strip()
+        
+        total_filas = len(df)
+        update_task_progress(task_id, 0, total=total_filas, msg=f"Validando cabeceras y preparando {total_filas} registros...")
+        
         cursor = conn.cursor()
-        errores = []
-        contador = 0
         
         for idx, row in df.iterrows():
             fila_num = idx + 2 # +2 por cabecera y base 0
+            
             dni = str(row.get('DNI', '')).strip()
-            # Validar si pandas leyó como float y le puso .0
             if dni.endswith('.0'): dni = dni[:-2]
 
-            nombre = row.get('APELLIDOS Y NOMBRES', '').strip()
-            oficina = row.get('OFICINA', '').strip()
-            c_inst = row.get('CORREO INSTITUCIONAL', '').strip()
-            c_per = row.get('CORREO PERSONAL', '').strip()
-            telefono = str(row.get('TELEFONO', '')).strip()
+            nombre = str(row.get('Apellidos y Nombres', row.get('APELLIDOS Y NOMBRES', ''))).strip()
+            oficina = str(row.get('Oficina', row.get('OFICINA', ''))).strip()
+            c_inst = str(row.get('Correo Institucional', row.get('CORREO INSTITUCIONAL', ''))).strip()
+            c_per = str(row.get('Correo Personal', row.get('CORREO PERSONAL', ''))).strip()
+            
+            telefono = str(row.get('Teléfono', row.get('TELEFONO', ''))).strip()
             if telefono.endswith('.0'): telefono = telefono[:-2]
             
-            if not dni or len(dni) < 5 or not nombre: 
-                errores.append(f"Fila {fila_num}: Falta DNI o Nombre.")
+            if not nombre: 
+                errores.append(f"Fila {fila_num}: Celda de nombre vacía.")
                 continue
 
-            err_bool, msg_error = verificar_dni_global(dni, ignora_tabla='PersonalAdministrativo', cursor=cursor)
-            if err_bool: 
-                errores.append(f"Fila {fila_num}: {msg_error}")
-                continue 
-            
-            cursor.execute("SELECT PersonalID FROM PersonalAdministrativo WHERE DNI = ?", (dni,))
-            if cursor.fetchone():
-                cursor.execute("""
-                    UPDATE PersonalAdministrativo 
-                    SET ApellidosNombres=?, Oficina=?, CorreoInstitucional=?, CorreoPersonal=?, Telefono=? 
-                    WHERE DNI=?
-                """, (nombre, oficina, c_inst, c_per, telefono, dni))
+            # --- VALIDACIÓN GLOBAL ---
+            skip_row = False
+            if dni not in ['0', '', '0.0'] and len(dni) >= 5:
+                err_bool, msg_error = verificar_dni_global(dni, ignora_tabla='PersonalAdministrativo', cursor=cursor)
+                if err_bool: 
+                    errores.append(f"Fila {fila_num}: {msg_error}")
+                    skip_row = True
             else:
-                cursor.execute("""
-                    INSERT INTO PersonalAdministrativo (ApellidosNombres, DNI, Oficina, CorreoInstitucional, CorreoPersonal, Telefono) 
-                    VALUES (?,?,?,?,?,?)
-                """, (nombre, dni, oficina, c_inst, c_per, telefono))
-            contador += 1
+                errores.append(f"Fila {fila_num}: Falta DNI válido.")
+                skip_row = True
+                
+            if not skip_row:
+                cursor.execute("SELECT PersonalID FROM PersonalAdministrativo WHERE DNI = ?", (dni,))
+                if cursor.fetchone():
+                    cursor.execute("""
+                        UPDATE PersonalAdministrativo 
+                        SET ApellidosNombres=?, Oficina=?, CorreoInstitucional=?, CorreoPersonal=?, Telefono=? 
+                        WHERE DNI=?
+                    """, (nombre, oficina, c_inst, c_per, telefono, dni))
+                else:
+                    cursor.execute("""
+                        INSERT INTO PersonalAdministrativo (ApellidosNombres, DNI, Oficina, CorreoInstitucional, CorreoPersonal, Telefono) 
+                        VALUES (?,?,?,?,?,?)
+                    """, (nombre, dni, oficina, c_inst, c_per, telefono))
+                contador += 1
+            
+            if idx % 50 == 0:
+                update_task_progress(task_id, idx, total=total_filas, msg=f"Guardando en BD: {idx} de {total_filas}...")
             
         conn.commit()
-        
-        msg = f'Procesados {contador} registros de personal con éxito.'
+        msg = f'Procesados {contador} de {total_filas} registros de personal con éxito.'
         if errores:
             detalles = "<br> • ".join(errores[:5])
             if len(errores) > 5: detalles += f"<br> • ... y {len(errores)-5} más."
             msg += f'<div class="mt-2 text-xs text-rose-600 bg-rose-50 p-2 rounded border border-rose-200"><p class="font-bold mb-1">Filas omitidas ({len(errores)}):</p> • {detalles}</div>'
             if contador == 0:
-                return {'status': 'error', 'msg': msg}
+                finish_task(task_id, success=False, msg=msg)
+                return
                 
-        return {'status': 'success', 'msg': msg}
+        finish_task(task_id, success=True, msg=msg)
+        
     except Exception as e:
-        return {'status': 'error', 'msg': f"Error al leer archivo: {str(e)}"}
+        finish_task(task_id, success=False, msg=f"Error fatal al procesar: {str(e)}")
     finally:
-        if 'conn' in locals(): conn.close()
+        conn.close()
 
+def eliminar_personal_masivo(ids):
+    if not ids:
+        return {'status': 'error', 'msg': "No hay IDs para eliminar"}
+        
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        placeholders = ','.join(['?'] * len(ids))
+        
+        # Eliminar registros de ingreso asociados primero
+        cursor.execute(f"DELETE FROM RegistroIngresos WHERE PersonalID IN ({placeholders})", ids)
+        
+        # Eliminar personal
+        cursor.execute(f"DELETE FROM PersonalAdministrativo WHERE PersonalID IN ({placeholders})", ids)
+        
+        conn.commit()
+        return {'status': 'success', 'msg': f"{len(ids)} registros de personal eliminados exitosamente."}
+    except Exception as e:
+        return {'status': 'error', 'msg': f"Error al eliminar en bloque: {str(e)}"}
+    finally:
+        if 'conn' in locals():
+            conn.close()
+
+def vaciar_personal_db():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Eliminar primero las dependencias de visitas vinculadas
+        cursor.execute("DELETE FROM RegistroIngresos WHERE PersonalID IS NOT NULL")
+        
+        # Luego truncamos o vaciamos la tabla principal
+        cursor.execute("DELETE FROM PersonalAdministrativo")
+        
+        # Opcional: Reiniciar el identity (contador de IDs) a 0.
+        cursor.execute("DBCC CHECKIDENT ('PersonalAdministrativo', RESEED, 0)")
+        
+        conn.commit()
+        return {'status': 'success', 'msg': "La tabla de Personal Administrativo ha sido VACIADA permanentemente."}
+    except Exception as e:
+        return {'status': 'error', 'msg': f"Error crítico al vaciar tabla: {str(e)}"}
+    finally:
+        if 'conn' in locals():
+            conn.close()

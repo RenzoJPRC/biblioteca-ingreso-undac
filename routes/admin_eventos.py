@@ -1,6 +1,8 @@
 from flask import Blueprint, render_template, request, jsonify
-from utils.queries_admin_eventos import buscar_eventos, guardar_evento, borrar_evento, procesar_excel_invitados
+from utils.queries_admin_eventos import buscar_eventos, guardar_evento, borrar_evento, procesar_excel_invitados_async
 from utils.queries_admin_eventos_detalle import obtener_asistentes_evento
+import threading
+from utils.task_manager import create_task
 
 admin_eventos_bp = Blueprint('admin_eventos', __name__, url_prefix='/admin')
 
@@ -35,11 +37,25 @@ def importar_invitados():
     file = request.files['file']
     evento_id = request.form.get('evento_id')
     
+    if file.filename == '':
+        return jsonify({'status': 'error', 'msg': 'Archivo no seleccionado'})
+        
     if not evento_id:
         return jsonify({'status': 'error', 'msg': 'Falta el ID del evento'})
         
-    resultado = procesar_excel_invitados(file, evento_id)
-    return jsonify(resultado)
+    try:
+        print("1. Recibiendo archivo Excel de Invitados VIP y delegando a segundo plano...")
+        file_bytes = file.read()
+        task_id = create_task()
+        
+        thread = threading.Thread(target=procesar_excel_invitados_async, args=(file_bytes, evento_id, task_id))
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({'status': 'processing', 'task_id': task_id})
+    except Exception as e:
+        print("ERROR CRÍTICO AL LEER EXCEL VIP:", str(e))
+        return jsonify({'status': 'error', 'msg': str(e)})
 
 @admin_eventos_bp.route('/evento_detalle/<int:id>')
 def evento_detalle_view(id):

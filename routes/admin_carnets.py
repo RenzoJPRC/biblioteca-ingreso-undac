@@ -3,13 +3,16 @@ import pandas as pd
 import sys
 import os
 
+import threading
+from utils.task_manager import create_task
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.queries_carnets import (
     buscar_alumnos_paginados,
     actualizar_vencimiento_individual,
     actualizar_vencimiento_masivo,
     actualizar_vencimiento_global,
-    procesar_excel_alumnos
+    procesar_excel_alumnos_async
 )
 
 admin_carnets_bp = Blueprint('admin_carnets', __name__, url_prefix='/admin')
@@ -82,11 +85,15 @@ def subir_excel():
     if file.filename == '': return jsonify({'status': 'error', 'msg': 'Nombre vacío'})
 
     try:
-        df = pd.read_excel(file, dtype={'DNI': str})
-        success, msg = procesar_excel_alumnos(df)
-        if success:
-            return jsonify({'status': 'success', 'msg': msg})
-        else:
-            return jsonify({'status': 'error', 'msg': msg})
+        print("1. Recibiendo archivo Excel de Alumnos y delegando a segundo plano...")
+        file_bytes = file.read()
+        task_id = create_task()
+        
+        thread = threading.Thread(target=procesar_excel_alumnos_async, args=(file_bytes, task_id))
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({'status': 'processing', 'task_id': task_id})
     except Exception as e:
+        print("ERROR CRÍTICO AL LEER EXCEL:", str(e))
         return jsonify({'status': 'error', 'msg': str(e)})
