@@ -32,9 +32,9 @@ def registrar_ingreso_general(codigo, piso, sede):
             escuela = row[2]
             semestre = row[3]
 
-            if 'CONCEDIDO' in mensaje: 
+            if 'CONCEDIDO' in mensaje or 'TRASLADO' in mensaje: 
                 warning_type = None
-                if 'CARNET VENCIDO' in mensaje:
+                if 'VENCIDO' in mensaje or 'CARNET VENCIDO' in mensaje:
                     warning_type = 'carnet_vencido'
 
                 return {
@@ -46,7 +46,7 @@ def registrar_ingreso_general(codigo, piso, sede):
                     'semestre': semestre
                 }
             
-            elif 'YA REGISTRADO' in mensaje:
+            elif 'YA REGISTRADO' in mensaje or 'YA ESTÁS REGISTRADO' in mensaje:
                 return {
                     'status': 'warning', 
                     'msg': mensaje, 
