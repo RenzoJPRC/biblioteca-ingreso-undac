@@ -121,3 +121,43 @@ def obtener_datos_dashboard(f_inicio, f_fin):
         'ultimos_crudos': ultimos_crudos,
         'filtro_label': filtro_label
     }
+
+def obtener_registros_csv(f_inicio, f_fin):
+    conn = get_db_connection()
+    if not conn: return []
+    try:
+        cursor = conn.cursor()
+        if f_inicio and f_fin:
+            date_where = "CAST(R.FechaHora AS DATE) >= ? AND CAST(R.FechaHora AS DATE) <= ?"
+            date_params = (f_inicio, f_fin)
+        else:
+            date_where = "CAST(R.FechaHora AS DATE) = CAST(GETDATE() AS DATE)"
+            date_params = ()
+            
+        cursor.execute(f"""
+            SELECT 
+                R.RegistroID,
+                COALESCE(A.NombreCompleto, V.NombreCompleto, E.NombreCompleto, P.ApellidosNombres),
+                ISNULL(R.Sede, 'Central'),
+                R.Piso,
+                FORMAT(R.FechaHora, 'yyyy-MM-dd HH:mm:ss'),
+                R.Turno,
+                CASE 
+                    WHEN R.VisitanteID IS NOT NULL THEN 'Visitante' 
+                    WHEN R.EgresadoID IS NOT NULL THEN 'Egresado'
+                    WHEN R.PersonalID IS NOT NULL THEN 'Administrativo'
+                    ELSE 'Alumno' 
+                END,
+                COALESCE(A.Escuela, V.Institucion, E.EscuelaProfesional, P.Oficina)
+            FROM RegistroIngresos R
+            LEFT JOIN Alumnos A ON R.AlumnoID = A.AlumnoID
+            LEFT JOIN Visitantes V ON R.VisitanteID = V.VisitanteID
+            LEFT JOIN Egresados E ON R.EgresadoID = E.EgresadoID
+            LEFT JOIN PersonalAdministrativo P ON R.PersonalID = P.PersonalID
+            WHERE {date_where}
+            ORDER BY R.FechaHora ASC
+        """, date_params)
+        
+        return cursor.fetchall()
+    finally:
+        conn.close()

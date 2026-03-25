@@ -67,7 +67,7 @@ function inicializarFormularioRangoFechas() {
             const ini = document.getElementById('fecha-inicio').value;
             const fin = document.getElementById('fecha-fin').value;
             if (ini && fin) {
-                window.location.href = `/admin/reporte_rango?inicio=${ini}&fin=${fin}`;
+                window.location.href = `/admin/exportar_ingresos_csv?inicio=${ini}&fin=${fin}`;
                 document.getElementById('modal-fechas').classList.add('hidden');
             } else {
                 if (typeof showToast !== 'undefined') {
