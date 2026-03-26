@@ -82,10 +82,11 @@ function inicializarFormularioRangoFechas() {
 
 function inicializarAutoRefresh(isToday) {
     if (isToday === 'true') {
-        setInterval(async function () {
+        const evtSource = new EventSource('/admin/api/dashboard_stream');
+
+        evtSource.onmessage = function (event) {
             try {
-                const res = await fetch('/admin/api/dashboard_data');
-                const data = await res.json();
+                const data = JSON.parse(event.data);
 
                 // 1. Actualizar Tarjeta Principal
                 document.querySelector('.text-3xl.font-bold.text-slate-800').innerText = data.total_hoy;
@@ -149,9 +150,13 @@ function inicializarAutoRefresh(isToday) {
                     }
                 }
             } catch (error) {
-                console.log("Error consultando datos en vivo:", error);
+                console.log("Error procesando stream SSE:", error);
             }
-        }, 15000);
+        };
+
+        evtSource.onerror = function (err) {
+            console.error('SSE Error - Connection dropped or failed to connect:', err);
+        };
     }
 }
 

@@ -35,6 +35,7 @@
             </div>
         </div>
 
+        {% if session.get('admin_rol') == 'SuperAdmin' %}
         <div>
             <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Externos</p>
             <div class="space-y-1">
@@ -85,22 +86,40 @@
         </div>
 
         <div>
-            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Biblioteca</p>
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Sistema y Seguridad</p>
             <div class="space-y-1">
-                <a href="#"
-                    class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg transition-all">
-                    <i class="ph ph-books text-lg"></i>
-                    <span class="text-sm font-medium">Libros (Próx.)</span>
+                <a href="/admin/accesos"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {% if request.path == '/admin/accesos' %} bg-emerald-600 text-white shadow-lg shadow-emerald-900/20 {% else %} text-slate-400 hover:text-white hover:bg-slate-800 {% endif %}">
+                    <i class="ph ph-shield-check text-lg"></i>
+                    <span class="text-sm font-medium">Gestores (RBAC)</span>
                 </a>
             </div>
         </div>
+        {% else %}
+        <div class="p-4 bg-sky-900/20 border border-sky-800 rounded-lg mx-2 text-center mt-6">
+            <i class="ph-fill ph-info text-sky-500 text-2xl mb-2"></i>
+            <p class="text-xs text-slate-400">Modo Supervisor</p>
+            <p class="text-[10px] text-slate-500 mt-1">Vistas de edición bloqueadas por seguridad.</p>
+        </div>
+        {% endif %}
 
     </nav>
 
-    <div class="p-4 border-t border-slate-800 bg-slate-900/50 space-y-2">
-        <div class="text-center">
-            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Módulos de Carga</p>
-            <p class="text-[10px] text-slate-600">Disponibles dentro de cada vista de gestión.</p>
+    <div class="p-4 border-t border-slate-800 bg-slate-900 flex flex-col gap-2">
+        <div class="flex items-center justify-between text-slate-400 text-xs px-2">
+            <div class="flex items-center gap-2 truncate">
+                <i class="ph-fill ph-user-circle text-2xl text-sky-500"></i>
+                <div class="flex flex-col">
+                    <span class="truncate font-bold text-white">{{ session.get('admin_user', 'Admin') }}</span>
+                    <span class="truncate text-[10px] uppercase text-sky-500">{{ session.get('admin_rol', 'Staff')
+                        }}</span>
+                </div>
+            </div>
+            <a href="/admin/logout"
+                class="bg-rose-500/10 text-rose-500 p-2 rounded-lg hover:bg-rose-500 hover:text-white transition-colors"
+                title="Cerrar Sesión">
+                <i class="ph ph-sign-out text-xl"></i>
+            </a>
         </div>
     </div>
 

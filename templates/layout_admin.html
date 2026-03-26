@@ -9,6 +9,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="shortcut icon" href="{{ url_for('static', filename='logo_2.png') }}" type="image/x-icon">
+    <meta name="csrf-token" content="{{ csrf_token }}">
 </head>
 
 <body class="bg-slate-50 h-screen flex overflow-hidden font-sans">
@@ -23,6 +24,25 @@
 
     {% include 'partials/_modals_upload.html' %}
     {% include 'partials/_toast.html' %}
+
+    <script>
+        // Interceptor Global Avanzado (Anti-CSRF)
+        // Autoinyecta criptográficamente el Token Sesión en cada petición Fetch (POST/DELETE) aislando el Backend
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        if (csrfToken) {
+            const _originalFetch = window.fetch;
+            window.fetch = async function (...args) {
+                let [resource, config] = args;
+                if (config && (config.method === 'POST' || config.method === 'DELETE')) {
+                    config.headers = {
+                        ...config.headers,
+                        'X-CSRFToken': csrfToken
+                    };
+                }
+                return _originalFetch(resource, config);
+            };
+        }
+    </script>
 
     {% block scripts %}{% endblock %}
 

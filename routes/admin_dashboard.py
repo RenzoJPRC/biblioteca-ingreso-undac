@@ -1,5 +1,7 @@
-from flask import Blueprint, render_template, request, Response
+from flask import Blueprint, render_template, request, Response, session
 from utils.queries_dashboard import obtener_datos_dashboard, obtener_registros_csv
+import json
+import time
 
 # El Blueprint para el dashboard y la raíz de /admin
 admin_dashboard_bp = Blueprint('admin_dashboard', __name__, url_prefix='/admin')
@@ -9,7 +11,8 @@ def admin_dashboard():
     f_inicio = request.args.get('inicio')
     f_fin = request.args.get('fin')
     
-    dash_data = obtener_datos_dashboard(f_inicio, f_fin)
+    sede_filtro = session.get('admin_sede') if session.get('admin_rol') == 'Supervisor' else None
+    dash_data = obtener_datos_dashboard(f_inicio, f_fin, sede_filtro)
 
     return render_template('admin_dashboard.html', 
                            total_hoy=dash_data['total_hoy'], 
@@ -28,27 +31,37 @@ def admin_dashboard():
                            params_inicio=f_inicio or '', 
                            params_fin=f_fin or '')
 
-@admin_dashboard_bp.route('/api/dashboard_data')
-def api_dashboard_data():
-    # El endpoint API siempre devuelve los datos del dia de hoy
-    dash_data = obtener_datos_dashboard(None, None)
+@admin_dashboard_bp.route('/api/dashboard_stream')
+def api_dashboard_stream():
+    sede_filtro = session.get('admin_sede') if session.get('admin_rol') == 'Supervisor' else None
     
-    return {
-        'total_hoy': dash_data['total_hoy'],
-        'total_alumnos': dash_data['total_alumnos'],
-        'total_visitantes': dash_data['total_visitantes'],
-        'total_egresados': dash_data['total_egresados'],
-        'total_personal': dash_data['total_personal'],
-        'pisos': dash_data['pisos'],
-        'sedes': dash_data['sedes'],
-        'ultimos': dash_data['ultimos']
-    }
+    def generate():
+        while True:
+            try:
+                dash_data = obtener_datos_dashboard(None, None, sede_filtro)
+                payload = {
+                    'total_hoy': dash_data['total_hoy'],
+                    'total_alumnos': dash_data['total_alumnos'],
+                    'total_visitantes': dash_data['total_visitantes'],
+                    'total_egresados': dash_data['total_egresados'],
+                    'total_personal': dash_data['total_personal'],
+                    'pisos': dash_data['pisos'],
+                    'sedes': dash_data['sedes'],
+                    'ultimos': dash_data['ultimos']
+                }
+                yield f"data: {json.dumps(payload)}\n\n"
+            except Exception as e:
+                print("SSE Error:", e)
+            time.sleep(5)
+            
+    return Response(generate(), mimetype='text/event-stream')
 
 @admin_dashboard_bp.route('/exportar_ingresos_csv')
 def exportar_ingresos_csv():
     f_inicio = request.args.get('inicio')
     f_fin = request.args.get('fin')
-    registros = obtener_registros_csv(f_inicio, f_fin)
+    sede_filtro = session.get('admin_sede') if session.get('admin_rol') == 'Supervisor' else None
+    registros = obtener_registros_csv(f_inicio, f_fin, sede_filtro)
     
     def generate():
         # Headers del CSV
