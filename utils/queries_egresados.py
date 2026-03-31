@@ -112,8 +112,8 @@ def procesar_excel_egresados_async(file_bytes, task_id):
         df = pd.read_excel(io.BytesIO(file_bytes))
         df = df.fillna('')
         
-        # Limpiamos los espacios en blanco de las cabeceras
-        df.columns = df.columns.astype(str).str.strip()
+        # Limpiamos los espacios en blanco y forzamos mayúsculas
+        df.columns = df.columns.astype(str).str.strip().str.upper()
         
         total_filas = len(df)
         update_task_progress(task_id, 0, total=total_filas, msg=f"Validando cabeceras y preparando {total_filas} registros...")
@@ -128,18 +128,18 @@ def procesar_excel_egresados_async(file_bytes, task_id):
             if dni.endswith('.0'): 
                 dni = dni[:-2]
 
-            # Mapear a las columnas aceptando ambos nombres (los del nuevo excel y los del modal)
-            nombre_raw = str(row.get('Apellidos y Nombres', row.get('APELLIDOS Y NOMBRE', ''))).strip()
+            # Mapear a las columnas aceptando nombres en mayúsculas
+            nombre_raw = str(row.get('APELLIDOS Y NOMBRES', row.get('APELLIDOS Y NOMBRE', row.get('NOMBRE COMPLETO', '')))).strip()
             nombre = formatear_nombre_estetico(nombre_raw)
             
-            codigo = str(row.get('Código Matrícula', row.get('CODIGO DE MATRICULA', ''))).strip()
+            codigo = str(row.get('CÓDIGO MATRÍCULA', row.get('CODIGO DE MATRICULA', row.get('CODIGO', '')))).strip()
             if codigo.endswith('.0'): 
                 codigo = codigo[:-2]
                 
-            facultad = str(row.get('Facultad', row.get('FACULTAD', ''))).strip()
-            escuela = str(row.get('Escuela Profesional', row.get('ESCUELA', ''))).strip()
+            facultad = str(row.get('FACULTAD', '')).strip()
+            escuela = str(row.get('ESCUELA PROFESIONAL', row.get('ESCUELA', ''))).strip()
             
-            c_personal = str(row.get('CORREO PERSONAL', '')).strip()
+            c_personal = str(row.get('CORREO PERSONAL', row.get('CORREO', ''))).strip()
             c_institucional = str(row.get('CORREO INSTITUCIONAL', '')).strip()
             celular = str(row.get('CELULAR', '')).strip()
             if celular.endswith('.0'):
@@ -152,11 +152,14 @@ def procesar_excel_egresados_async(file_bytes, task_id):
             else:
                 # --- VALIDACIÓN GLOBAL ---
                 skip_row = False
-                if dni not in ['0', '', '0.0']:
+                if dni not in ['0', '', '0.0'] and len(dni) >= 5:
                     err_bool, msg_valid = verificar_dni_global(dni, ignora_tabla='Egresados', cursor=cursor)
                     if err_bool: 
                         errores.append(f"Fila {num_fila}: {msg_valid} - DNI {dni}")
                         skip_row = True
+                elif not codigo:
+                    errores.append(f"Fila {num_fila}: DNI y Código ausentes o inválidos.")
+                    skip_row = True
                 
                 if not skip_row:
                     # Buscar si el egresado ya existe usando el Código de Matrícula

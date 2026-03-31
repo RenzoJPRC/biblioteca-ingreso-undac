@@ -153,7 +153,7 @@ def procesar_excel_alumnos_async(file_bytes, task_id):
         # Lectura sin tipo rígido
         df = pd.read_excel(io.BytesIO(file_bytes))
         df = df.fillna('')
-        df.columns = df.columns.astype(str).str.strip()
+        df.columns = df.columns.astype(str).str.strip().str.upper()
         
         total_filas = len(df)
         update_task_progress(task_id, 0, total=total_filas, msg=f"Validando cabeceras y preparando {total_filas} registros...")
@@ -167,18 +167,19 @@ def procesar_excel_alumnos_async(file_bytes, task_id):
             dni = str(row.get('DNI', '')).strip()
             if dni.endswith('.0'): dni = dni[:-2]
             
-            # Buscar variaciones comunes de cabeceras
-            nombre_raw = str(row.get('Apellidos y Nombres', 
+            # Buscar variaciones comunes de cabeceras EN MAYÚSCULAS Y CON/SIN S
+            nombre_raw = str(row.get('APELLIDOS Y NOMBRE', 
                          row.get('APELLIDOS Y NOMBRES',
-                         row.get('NOMBRE COMPLETO', '')))).strip()
+                         row.get('NOMBRE COMPLETO', 
+                         row.get('NOMBRES Y APELLIDOS', ''))))).strip()
             nombre = formatear_nombre_estetico(nombre_raw)
             
-            codigo = str(row.get('Código', 
-                     row.get('CÓDIGO', row.get('CODIGO DE MATRICULA', '')))).strip()
+            codigo = str(row.get('CÓDIGO', 
+                     row.get('CODIGO', row.get('CODIGO DE MATRICULA', '')))).strip()
             if codigo.endswith('.0'): codigo = codigo[:-2]
             
-            escuela = str(row.get('Escuela Profesional', row.get('ESCUELA', ''))).strip()
-            semestre = str(row.get('Semestre', row.get('SEMESTRE', ''))).strip()
+            escuela = str(row.get('ESCUELA PROFESIONAL', row.get('ESCUELA', ''))).strip()
+            semestre = str(row.get('SEMESTRE', '')).strip()
             if semestre.endswith('.0'): semestre = semestre[:-2]
             
             if not nombre: 

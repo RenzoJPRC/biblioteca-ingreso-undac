@@ -57,7 +57,7 @@ def finish_task(task_id, success=True, msg=""):
         
         if msg:
             updates.append("Message = ?")
-            params.append(msg)
+            params.append(str(msg)[:250])
             
         params.append(task_id)
         
@@ -66,6 +66,12 @@ def finish_task(task_id, success=True, msg=""):
         conn.commit()
     except Exception as e:
         print(f"Error finishing task: {e}")
+        try:
+            # Fallback for truncation or DataErrors: Force state to error so UI unfreezes
+            cursor.execute("UPDATE UploadTasks SET Status='error', Message='Error Fatal Interno', UpdatedAt=GETDATE() WHERE TaskID=?", (task_id,))
+            conn.commit()
+        except:
+            pass
     finally:
         conn.close()
 

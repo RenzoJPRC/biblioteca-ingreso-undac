@@ -4,10 +4,19 @@ from db import get_db_connection
 from utils.validaciones import verificar_dni_global, formatear_nombre_estetico
 from utils.task_manager import update_task_progress, finish_task
 
-def obtener_todos_visitantes():
+def obtener_todos_visitantes(query=""):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT VisitanteID, NombreCompleto, DNI, Institucion, Correo FROM Visitantes ORDER BY NombreCompleto ASC")
+    if query:
+        search = f"%{query}%"
+        cursor.execute("""
+            SELECT VisitanteID, NombreCompleto, DNI, Institucion, Correo 
+            FROM Visitantes 
+            WHERE NombreCompleto LIKE ? OR DNI LIKE ? OR ISNULL(Institucion, '') LIKE ?
+            ORDER BY NombreCompleto ASC
+        """, (search, search, search))
+    else:
+        cursor.execute("SELECT VisitanteID, NombreCompleto, DNI, Institucion, Correo FROM Visitantes ORDER BY NombreCompleto ASC")
     lista = cursor.fetchall()
     conn.close()
     return lista

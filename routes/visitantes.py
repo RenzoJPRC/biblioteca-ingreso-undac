@@ -7,8 +7,9 @@ visitantes_bp = Blueprint('visitantes', __name__, url_prefix='/admin')
 
 @visitantes_bp.route('/visitantes')
 def admin_visitantes_page():
-    lista = obtener_todos_visitantes()
-    return render_template('admin_visitantes.html', visitantes=lista)
+    query = request.args.get('q', '').strip()
+    lista = obtener_todos_visitantes(query)
+    return render_template('admin_visitantes.html', visitantes=lista, search_query=query)
 
 @visitantes_bp.route('/agregar_visitante', methods=['POST'])
 def agregar_visitante():

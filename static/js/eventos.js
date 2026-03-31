@@ -1,6 +1,5 @@
 let currentPage = 1;
 let currentQuery = '';
-let estadoActual = 'Activo';
 
 function inicializarEventos() {
     buscarEventos();
@@ -137,33 +136,12 @@ function abrirModalNuevo() {
     document.getElementById('chk-personal').checked = false;
     document.getElementById('chk-visitantes').checked = false;
 
-    // Boton Estado (Oculto en Nuevo)
-    document.getElementById('btn-estado').style.display = 'none';
-    estadoActual = 'Activo';
-
     document.getElementById('modal-evento').classList.remove('hidden');
     document.getElementById('modal-nombre').focus();
 }
 
 function cerrarModal() {
     document.getElementById('modal-evento').classList.add('hidden');
-}
-
-function toggleEstado() {
-    const btn = document.getElementById('btn-estado');
-    const txt = document.getElementById('txt-estado');
-
-    if (estadoActual === 'Activo') {
-        estadoActual = 'Finalizado';
-        btn.className = "absolute left-0 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold transition-colors flex justify-center items-center gap-2 border border-slate-300";
-    } else if (estadoActual === 'Finalizado') {
-        estadoActual = 'Cancelado';
-        btn.className = "absolute left-0 px-4 py-2 bg-rose-100 text-rose-700 rounded-lg font-bold transition-colors flex justify-center items-center gap-2 border border-rose-300";
-    } else {
-        estadoActual = 'Activo';
-        btn.className = "absolute left-0 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg font-bold transition-colors flex justify-center items-center gap-2 border border-emerald-300";
-    }
-    txt.innerText = estadoActual;
 }
 
 window.editarEventoDataTemp = null;
@@ -191,16 +169,6 @@ function editarEvento(id) {
 
             document.getElementById('modal-titulo').innerHTML = `<i class="ph ph-calendar-edit text-rose-600 text-2xl"></i><span>Editar Evento</span>`;
 
-            // Boton de estado
-            estadoActual = evento.estado;
-            const btn = document.getElementById('btn-estado');
-            btn.style.display = 'flex';
-            if (estadoActual === 'Activo') btn.className = "absolute left-0 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg font-bold transition-colors flex justify-center items-center gap-2 border border-emerald-300";
-            else if (estadoActual === 'Cancelado') btn.className = "absolute left-0 px-4 py-2 bg-rose-100 text-rose-700 rounded-lg font-bold transition-colors flex justify-center items-center gap-2 border border-rose-300";
-            else btn.className = "absolute left-0 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold transition-colors flex justify-center items-center gap-2 border border-slate-300";
-
-            document.getElementById('txt-estado').innerText = estadoActual;
-
             document.getElementById('modal-evento').classList.remove('hidden');
         });
 }
@@ -218,7 +186,6 @@ function guardarEvento(e) {
         hora_fin: document.getElementById('modal-hora-fin').value,
         lugar: document.getElementById('modal-lugar').value,
         sede: document.getElementById('modal-sede').value,
-        estado: estadoActual,
         permite_alumnos: document.getElementById('chk-alumnos').checked,
         permite_egresados: document.getElementById('chk-egresados').checked,
         permite_personal: document.getElementById('chk-personal').checked,
