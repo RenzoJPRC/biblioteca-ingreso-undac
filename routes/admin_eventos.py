@@ -15,18 +15,33 @@ def buscar_evts():
     query = request.args.get('q', '').strip()
     page = int(request.args.get('page', 1))
     
-    resultado = buscar_eventos(query, page)
+    # Filtro Geográfico por Rol
+    from flask import session
+    sede_filtro = session.get('admin_sede') if session.get('admin_rol') == 'Supervisor' else 'Todas'
+    
+    resultado = buscar_eventos(query, page, sede_filtro)
     return jsonify(resultado)
 
 @admin_eventos_bp.route('/guardar_evento', methods=['POST'])
 def guardar_evt():
     data = request.json
+    
+    from flask import session
+    if session.get('admin_rol') == 'Supervisor':
+        data['sede_asignada'] = session.get('admin_sede')
+        data['sede'] = session.get('admin_sede') # Forzar localidad
+    else:
+        # Si es SuperAdmin, el SedeAsignada puede ser "Todas" o lo que elija (temporalmente Central)
+        data['sede_asignada'] = data.get('sede', 'Todas')
+        
     resultado = guardar_evento(data)
     return jsonify(resultado)
 
 @admin_eventos_bp.route('/eliminar_evento/<int:id>', methods=['DELETE'])
 def eliminar_evt(id):
-    resultado = borrar_evento(id)
+    from flask import session
+    sede_owner = session.get('admin_sede') if session.get('admin_rol') == 'Supervisor' else 'Todas'
+    resultado = borrar_evento(id, sede_owner)
     return jsonify(resultado)
 
 @admin_eventos_bp.route('/importar_invitados_evento', methods=['POST'])

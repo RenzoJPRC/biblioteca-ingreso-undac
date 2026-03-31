@@ -15,6 +15,7 @@ from routes.admin_eventos import admin_eventos_bp
 from routes.admin_tasks import admin_tasks_bp
 from routes.admin_auth import admin_auth_bp
 from routes.admin_accesos import admin_accesos_bp
+from routes.admin_auditoria import admin_auditoria_bp
 
 app = Flask(__name__)
 app.secret_key = 'undac_biblioteca_secreto_seguro_2026'
@@ -38,11 +39,20 @@ def requerir_login_admin():
             if not token_enviado or token_enviado != session.get('csrf_token'):
                 return "<h1>403 Peligro - Bloqueo CSRF</h1><p>Se ha detectado una petici\u00f3n de servidor cruzado sin firma v\u00e1lida. Accesi\u00f3n denegada.</p>", 403
             
-        # Hard-block para Supervisores: Solo pueden ver el Dashboard y su perfil
+        # Hard-block para Supervisores: Solo pueden ver el Dashboard, Eventos y su perfil
         if session.get('admin_rol') == 'Supervisor':
-            rutas_permitidas = ['/admin/', '/admin/login', '/admin/logout', '/admin/api/dashboard_data', '/admin/exportar_ingresos_csv']
-            # Permitir que entren al root del dashboard
-            if request.path not in rutas_permitidas and not request.path.startswith('/admin/api/dashboard'):
+            rutas_permitidas = [
+                '/admin/', '/admin/login', '/admin/logout', '/admin/api/dashboard_data', '/admin/exportar_ingresos_csv',
+                '/admin/eventos', '/admin/buscar_eventos', '/admin/guardar_evento', '/admin/importar_invitados_evento'
+            ]
+            # Permitir rutas dinámicas 
+            es_dinamica = (
+                request.path.startswith('/admin/api/dashboard') or
+                request.path.startswith('/admin/evento_detalle') or 
+                request.path.startswith('/admin/eliminar_evento') or
+                request.path.startswith('/admin/eventos') # Maneja trailing slash
+            )
+            if request.path not in rutas_permitidas and not es_dinamica:
                 return "<h1>403 Forbidden</h1><p>Tu rol de Supervisor no tiene permisos para visitar este módulo.</p><a href='/admin/'>Volver al Dashboard</a>", 403
 
 @app.context_processor
@@ -86,6 +96,7 @@ app.register_blueprint(admin_eventos_bp)
 app.register_blueprint(admin_tasks_bp)
 app.register_blueprint(admin_auth_bp)
 app.register_blueprint(admin_accesos_bp)
+app.register_blueprint(admin_auditoria_bp)
 
 if __name__ == '__main__':
     # Configura tu IP y Puerto aquí - 0.0.0.0 permite conexiones desde cualquier IP

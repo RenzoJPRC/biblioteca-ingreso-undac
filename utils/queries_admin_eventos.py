@@ -5,7 +5,7 @@ from db import get_db_connection
 from utils.task_manager import update_task_progress, finish_task
 from utils.validaciones import formatear_nombre_estetico
 
-def buscar_eventos(query='', page=1):
+def buscar_eventos(query='', page=1, sede_filtro='Todas'):
     items_por_pagina = 10
     offset = (page - 1) * items_por_pagina
 
@@ -13,10 +13,15 @@ def buscar_eventos(query='', page=1):
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        sql_base = "FROM Eventos WHERE NombreEvento LIKE ?"
+        if sede_filtro != 'Todas':
+            sql_base = "FROM Eventos WHERE NombreEvento LIKE ? AND (ISNULL(SedeAsignada, 'Central') = ? OR SedeAsignada = 'Todas')"
+            base_params = [f'%{query}%', sede_filtro]
+        else:
+            sql_base = "FROM Eventos WHERE NombreEvento LIKE ?"
+            base_params = [f'%{query}%']
         
         # Total
-        cursor.execute(f"SELECT COUNT(*) {sql_base}", (f'%{query}%',))
+        cursor.execute(f"SELECT COUNT(*) {sql_base}", tuple(base_params))
         total_items = cursor.fetchone()[0]
         total_paginas = (total_items + items_por_pagina - 1) // items_por_pagina
 
@@ -28,7 +33,8 @@ def buscar_eventos(query='', page=1):
             ORDER BY FechaEvento DESC, HoraInicio DESC
             OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
         """
-        cursor.execute(sql_datos, (f'%{query}%', offset, items_por_pagina))
+        params_datos = base_params + [offset, items_por_pagina]
+        cursor.execute(sql_datos, tuple(params_datos))
         
         eventos = []
         now = datetime.now()
@@ -110,6 +116,7 @@ def guardar_evento(data):
         lugar = data.get('lugar', '')
         estado = data.get('estado', 'Activo')
         sede = data.get('sede', 'Central')
+        sede_asignada = data.get('sede_asignada', 'Central')
         
         p_alu = 1 if data.get('permite_alumnos') else 0
         p_egr = 1 if data.get('permite_egresados') else 0
@@ -120,17 +127,17 @@ def guardar_evento(data):
             cursor.execute("""
                 UPDATE Eventos 
                 SET NombreEvento=?, FechaEvento=?, HoraInicio=?, HoraFin=?, Lugar=?, Estado=?,
-                    PermiteAlumnos=?, PermiteEgresados=?, PermitePersonal=?, PermiteVisitantes=?, NombreSede=?
+                    PermiteAlumnos=?, PermiteEgresados=?, PermitePersonal=?, PermiteVisitantes=?, NombreSede=?, SedeAsignada=?
                 WHERE EventoID=?
-            """, (nombre, fecha, hora_inicio, hora_fin, lugar, estado, p_alu, p_egr, p_per, p_vis, sede, evento_id))
+            """, (nombre, fecha, hora_inicio, hora_fin, lugar, estado, p_alu, p_egr, p_per, p_vis, sede, sede_asignada, evento_id))
             msg = 'Evento actualizado correctamente.'
         else: # INSERT
             cursor.execute("""
                 INSERT INTO Eventos 
                 (NombreEvento, FechaEvento, HoraInicio, HoraFin, Lugar, Estado, 
-                 PermiteAlumnos, PermiteEgresados, PermitePersonal, PermiteVisitantes, NombreSede)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (nombre, fecha, hora_inicio, hora_fin, lugar, estado, p_alu, p_egr, p_per, p_vis, sede))
+                 PermiteAlumnos, PermiteEgresados, PermitePersonal, PermiteVisitantes, NombreSede, SedeAsignada)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (nombre, fecha, hora_inicio, hora_fin, lugar, estado, p_alu, p_egr, p_per, p_vis, sede, sede_asignada))
             msg = 'Evento creado correctamente.'
             
         conn.commit()
@@ -140,10 +147,15 @@ def guardar_evento(data):
     finally:
         if 'conn' in locals() and conn: conn.close()
         
-def borrar_evento(evento_id):
+def borrar_evento(evento_id, sede_owner='Todas'):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+        
+        if sede_owner != 'Todas':
+            cursor.execute("SELECT 1 FROM Eventos WHERE EventoID = ? AND ISNULL(SedeAsignada, 'Central') = ?", (evento_id, sede_owner))
+            if not cursor.fetchone():
+                return {'status': 'error', 'msg': 'Operación prohibida. No tienes permisos sobre este evento.'}
         
         # Eliminar dependencias
         cursor.execute("DELETE FROM AsistenciaEventos WHERE EventoID = ?", (evento_id,))

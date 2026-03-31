@@ -105,6 +105,58 @@
         const sede = "{{ sede }}";
         let timer;
 
+        // Audio Feedbacks (API NATIVA ZERO-DEPENDENCIES)
+        function playSuccessBeep() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // Alta frecuencia, A5
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                oscillator.start();
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.15);
+                oscillator.stop(audioCtx.currentTime + 0.15);
+            } catch (e) { }
+        }
+
+        function playErrorBeep() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.setValueAtTime(150, audioCtx.currentTime); // Baja frecuencia, Buzz
+                gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                oscillator.start();
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.3);
+                oscillator.stop(audioCtx.currentTime + 0.3);
+            } catch (e) { }
+        }
+
+        function playWarningBeep() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const os = audioCtx.createOscillator();
+                const gn = audioCtx.createGain();
+                os.connect(gn); gn.connect(audioCtx.destination);
+                os.type = 'square';
+                os.frequency.setValueAtTime(440, audioCtx.currentTime); // Media frecuencia
+                os.frequency.setValueAtTime(330, audioCtx.currentTime + 0.1); // Baja rápida
+                gn.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                os.start();
+                gn.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.2);
+                os.stop(audioCtx.currentTime + 0.2);
+            } catch (e) { }
+        }
+
         function focarInput() { input.focus(); }
         window.onload = () => {
             focarInput();
@@ -168,13 +220,14 @@
             const esAdministrativo = data.semestre && data.semestre.toUpperCase() === 'ADMINISTRATIVO';
 
             if (data.status === 'success') {
+                playSuccessBeep();
                 // VERDE, ORO o NARANJA: Acceso Correcto
                 txtEstado.innerText = "Acceso Permitido";
 
                 if (esEgresado) {
-                    txtEstado.classList.add("text-amber-400");
-                    icono.innerHTML = `<svg class="w-32 h-32 text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.6)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
-                    glow.className = "fixed inset-0 pointer-events-none transition-all duration-300 z-50 shadow-[inset_0_0_250px_rgba(251,191,36,0.25)] bg-amber-500/5";
+                    txtEstado.classList.add("text-cyan-400");
+                    icono.innerHTML = `<svg class="w-32 h-32 text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.6)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    glow.className = "fixed inset-0 pointer-events-none transition-all duration-300 z-50 shadow-[inset_0_0_250px_rgba(34,211,238,0.25)] bg-cyan-500/5";
                 } else if (esVisitante) {
                     txtEstado.classList.add("text-orange-400");
                     icono.innerHTML = `<svg class="w-32 h-32 text-orange-400 drop-shadow-[0_0_15px_rgba(251,146,60,0.6)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
@@ -198,6 +251,7 @@
                 llenarDatos(data);
 
             } else if (data.status === 'warning') {
+                playWarningBeep();
                 // AMARILLO: Ya registrado (PERO MUESTRA DATOS)
                 txtEstado.innerText = data.msg; // "YA REGISTRADO..."
                 txtEstado.classList.add("text-yellow-400");
@@ -208,6 +262,7 @@
                 llenarDatos(data);
 
             } else {
+                playErrorBeep();
                 // ROJO: Error / No encontrado
                 txtEstado.innerText = data.msg || "No Registrado";
                 txtEstado.classList.add("text-rose-500");
