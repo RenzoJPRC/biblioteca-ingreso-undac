@@ -110,9 +110,32 @@ def eliminar_alumno_individual(alumno_id):
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
+        # Eliminar cascada de historial de ingresos para liberar la Foreign Key
+        cursor.execute("DELETE FROM RegistroIngresos WHERE AlumnoID = ?", (alumno_id,))
         cursor.execute("DELETE FROM Alumnos WHERE AlumnoID = ?", (alumno_id,))
         conn.commit()
         return True, "Alumno eliminado correctamente"
+    except Exception as e:
+        return False, str(e)
+    finally:
+        conn.close()
+
+def eliminar_alumnos_masivo_db(ids):
+    buscar_alumnos_paginados.cache_clear()
+    if not ids: return False, "Lista vacía"
+    
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        placeholders = ','.join('?' * len(ids))
+        # Purga de ingresos pre-eliminación
+        sql_ingresos = f"DELETE FROM RegistroIngresos WHERE AlumnoID IN ({placeholders})"
+        cursor.execute(sql_ingresos, ids)
+        
+        sql = f"DELETE FROM Alumnos WHERE AlumnoID IN ({placeholders})"
+        cursor.execute(sql, ids)
+        conn.commit()
+        return True, "Alumnos eliminados correctamente"
     except Exception as e:
         return False, str(e)
     finally:
@@ -123,9 +146,10 @@ def vaciar_alumnos_db():
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
+        cursor.execute("DELETE FROM RegistroIngresos WHERE AlumnoID IS NOT NULL")
         cursor.execute("DELETE FROM Alumnos")
         conn.commit()
-        return True, "Base de datos de alumnos vaciada"
+        return True, "Base de datos de alumnos truncada/vaciada exitosamente."
     except Exception as e:
         return False, str(e)
     finally:

@@ -240,6 +240,32 @@ function accionMasiva(accion) {
         });
 }
 
+function eliminarSeleccionados() {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+
+    if (!confirm(`⚠️ ALERTA DE BORRADO DE DATOS:\n\nEstás a punto de ELIMINAR PERMANENTEMENTE el registro y carnet de ${ids.length} alumnos.\nEsta acción destruirá su acceso al código de barras.\n\n¿Deseas proceder de todos modos?`)) return;
+
+    fetch('/admin/eliminar_alumnos_masivo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: ids })
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Alumnos ELIMINADOS con éxito.');
+                selectedIds.clear();
+                actualizarContador();
+                document.getElementById('check-todos').checked = false;
+                buscarAlumno(currentPage);
+            } else {
+                alert('Error: ' + data.msg);
+            }
+        })
+        .catch(err => console.error(err));
+}
+
 // --- ACCIONES GLOBALES (Toda la Base de Datos) ---
 function accionGlobal(accion) {
     const accionTexto = accion === 'activar' ? 'ACTIVAR' : 'DESACTIVAR';

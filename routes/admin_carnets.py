@@ -14,6 +14,7 @@ from utils.queries_carnets import (
     vaciar_alumnos_db,
     actualizar_vencimiento_masivo,
     actualizar_vencimiento_global,
+    eliminar_alumnos_masivo_db,
     procesar_excel_alumnos_async
 )
 
@@ -69,6 +70,17 @@ def vaciar_alumnos():
         return jsonify({'status': 'success', 'msg': msg})
     else:
         return jsonify({'status': 'error', 'msg': msg})
+
+@admin_carnets_bp.route('/eliminar_alumnos_masivo', methods=['POST'])
+def eliminar_alumnos_masivo():
+    data = request.json
+    ids = data.get('ids', [])
+    if not ids: return jsonify({'status': 'error', 'msg': 'No hay alumnos seleccionados'})
+    
+    success, msg = eliminar_alumnos_masivo_db(ids)
+    if success:
+        return jsonify({'status': 'success', 'msg': msg})
+    return jsonify({'status': 'error', 'msg': msg})
 
 @admin_carnets_bp.route('/actualizar_carnet_masivo', methods=['POST'])
 def actualizar_carnet_masivo():

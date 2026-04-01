@@ -1,7 +1,9 @@
-from flask import Blueprint, render_template, request, Response, session
+from flask import Blueprint, render_template, request, Response, session, send_file
 from utils.queries_dashboard import obtener_datos_dashboard, obtener_registros_csv
 import json
 import time
+import io
+import pandas as pd
 
 # El Blueprint para el dashboard y la raíz de /admin
 admin_dashboard_bp = Blueprint('admin_dashboard', __name__, url_prefix='/admin')
@@ -56,29 +58,29 @@ def api_dashboard_stream():
             
     return Response(generate(), mimetype='text/event-stream')
 
-@admin_dashboard_bp.route('/exportar_ingresos_csv')
-def exportar_ingresos_csv():
+@admin_dashboard_bp.route('/exportar_ingresos_excel')
+def exportar_ingresos_excel():
     f_inicio = request.args.get('inicio')
     f_fin = request.args.get('fin')
     sede_filtro = session.get('admin_sede') if session.get('admin_rol') == 'Supervisor' else None
     registros = obtener_registros_csv(f_inicio, f_fin, sede_filtro)
     
-    def generate():
-        # Headers del CSV
-        yield 'ID,Usuario,Sede,Piso,FechaHora,Turno,TipoPersona,Origen\n'
-        for row in registros:
-            r_id, usuario, sede, piso, fecha_hora, turno, tipo, origen = row
-            # Escapar comillas dobles y comas colocando todo entre comillas
-            usuario_safe = f'"{usuario}"' if usuario else '""'
-            origen_safe = f'"{origen}"' if origen else '""'
-            yield f"{r_id},{usuario_safe},{sede},{piso},{fecha_hora},{turno},{tipo},{origen_safe}\n"
+    # Crear DataFrame (desempaquetando pyodbc.Row para evitar index mismatches)
+    datos_limpios = [tuple(r) for r in registros]
+    df = pd.DataFrame(datos_limpios, columns=['ID', 'Usuario', 'Sede', 'Piso', 'Fecha Hora', 'Turno', 'Perfil', 'Lugar Origen'])
+    
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Reporte Ingresos')
+    output.seek(0)
 
-    filename = "reporte_ingresos.csv"
+    filename = "Reporte_Ingresos_Global.xlsx"
     if f_inicio or f_fin:
-        filename = f"reporte_ingresos_{f_inicio or 'inicio'}_al_{f_fin or 'fin'}.csv"
+        filename = f"Reporte_Ingresos_{f_inicio or 'Inicio'}_al_{f_fin or 'Fin'}.xlsx"
 
-    return Response(
-        generate(),
-        mimetype='text/csv',
-        headers={"Content-Disposition": f"attachment;filename={filename}"}
+    return send_file(
+        output, 
+        download_name=filename, 
+        as_attachment=True, 
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
