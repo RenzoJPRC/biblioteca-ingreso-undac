@@ -9,7 +9,9 @@ from utils.task_manager import create_task
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.queries_carnets import (
     buscar_alumnos_paginados,
-    actualizar_vencimiento_individual,
+    actualizar_alumno_completo_db,
+    eliminar_alumno_individual,
+    vaciar_alumnos_db,
     actualizar_vencimiento_masivo,
     actualizar_vencimiento_global,
     procesar_excel_alumnos_async
@@ -39,17 +41,32 @@ def buscar_alumno():
         }
     })
 
-@admin_carnets_bp.route('/actualizar_carnet', methods=['POST'])
-def actualizar_carnet():
+@admin_carnets_bp.route('/actualizar_alumno_completo', methods=['POST'])
+def actualizar_alumno_completo():
     data = request.json
     alumno_id = data.get('id')
-    nueva_fecha = data.get('fecha') # String 'YYYY-MM-DD' o vacío
+    
+    if not alumno_id: return jsonify({'status': 'error', 'msg': 'Faltan datos (ID)'})
 
-    if not alumno_id: return jsonify({'status': 'error', 'msg': 'Faltan datos'})
-
-    success, msg = actualizar_vencimiento_individual(alumno_id, nueva_fecha)
+    success, msg = actualizar_alumno_completo_db(data)
     if success:
-        return jsonify({'status': 'success'})
+        return jsonify({'status': 'success', 'msg': msg})
+    else:
+        return jsonify({'status': 'error', 'msg': msg})
+
+@admin_carnets_bp.route('/eliminar_alumno/<int:id>', methods=['DELETE'])
+def eliminar_alumno(id):
+    success, msg = eliminar_alumno_individual(id)
+    if success:
+        return jsonify({'status': 'success', 'msg': msg})
+    else:
+        return jsonify({'status': 'error', 'msg': msg})
+
+@admin_carnets_bp.route('/vaciar_alumnos', methods=['DELETE'])
+def vaciar_alumnos():
+    success, msg = vaciar_alumnos_db()
+    if success:
+        return jsonify({'status': 'success', 'msg': msg})
     else:
         return jsonify({'status': 'error', 'msg': msg})
 

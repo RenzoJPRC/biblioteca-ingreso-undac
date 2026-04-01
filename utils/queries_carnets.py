@@ -4,6 +4,7 @@ from utils.validaciones import verificar_dni_global, formatear_nombre_estetico
 import pandas as pd
 import io
 from utils.task_manager import update_task_progress, finish_task
+import functools
 
 def _get_global_expiration():
     """Calcula la fecha de vencimiento global según la lógica anual."""
@@ -15,6 +16,7 @@ def _get_global_expiration():
     # Abril-Diciembre: Vence año actual
     return datetime(year, 12, 31).date()
 
+@functools.lru_cache(maxsize=128)
 def buscar_alumnos_paginados(query, page, limit):
     offset = (page - 1) * limit
     
@@ -77,20 +79,60 @@ def buscar_alumnos_paginados(query, page, limit):
     
     return resultados, total_items, total_pages
 
-def actualizar_vencimiento_individual(alumno_id, nueva_fecha):
-    val_fecha = nueva_fecha if nueva_fecha else None
+def actualizar_alumno_completo_db(data):
+    buscar_alumnos_paginados.cache_clear()
+    alumno_id = data.get('id')
+    nombre = data.get('nombre')
+    dni = data.get('dni')
+    codigo = data.get('codigo')
+    escuela = data.get('escuela')
+    fecha = data.get('fecha')
+
+    val_fecha = fecha if fecha else None
+    
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("UPDATE Alumnos SET FechaVencimientoCarnet = ? WHERE AlumnoID = ?", (val_fecha, alumno_id))
+        cursor.execute("""
+            UPDATE Alumnos 
+            SET NombreCompleto = ?, DNI = ?, CodigoMatricula = ?, Escuela = ?, FechaVencimientoCarnet = ? 
+            WHERE AlumnoID = ?
+        """, (nombre, dni, codigo, escuela, val_fecha, alumno_id))
         conn.commit()
-        return True, "Success"
+        return True, "Alumno actualizado correctamente"
+    except Exception as e:
+        return False, str(e)
+    finally:
+        conn.close()
+
+def eliminar_alumno_individual(alumno_id):
+    buscar_alumnos_paginados.cache_clear()
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM Alumnos WHERE AlumnoID = ?", (alumno_id,))
+        conn.commit()
+        return True, "Alumno eliminado correctamente"
+    except Exception as e:
+        return False, str(e)
+    finally:
+        conn.close()
+
+def vaciar_alumnos_db():
+    buscar_alumnos_paginados.cache_clear()
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM Alumnos")
+        conn.commit()
+        return True, "Base de datos de alumnos vaciada"
     except Exception as e:
         return False, str(e)
     finally:
         conn.close()
 
 def actualizar_vencimiento_masivo(ids, accion):
+    buscar_alumnos_paginados.cache_clear()
     año_actual = datetime.now().year
     fecha_val = None
 
@@ -119,6 +161,7 @@ def actualizar_vencimiento_masivo(ids, accion):
         conn.close()
 
 def actualizar_vencimiento_global(accion):
+    buscar_alumnos_paginados.cache_clear()
     año_actual = datetime.now().year
     fecha_val = None
 
@@ -144,14 +187,15 @@ def actualizar_vencimiento_global(accion):
         conn.close()
 
 def procesar_excel_alumnos_async(file_bytes, task_id):
+    buscar_alumnos_paginados.cache_clear()
     conn = get_db_connection()
     contador = 0
     errores = []
     try:
         update_task_progress(task_id, 0, msg="Leyendo archivo Excel de Alumnos...")
         
-        # Lectura sin tipo rígido
-        df = pd.read_excel(io.BytesIO(file_bytes))
+        # Leemos garantizando que todos los datos se procesen como texto puro
+        df = pd.read_excel(io.BytesIO(file_bytes), dtype=str)
         df = df.fillna('')
         df.columns = df.columns.astype(str).str.strip().str.upper()
         
@@ -166,6 +210,14 @@ def procesar_excel_alumnos_async(file_bytes, task_id):
             # Limpieza exhaustiva
             dni = str(row.get('DNI', '')).strip()
             if dni.endswith('.0'): dni = dni[:-2]
+            
+            # Restaurar ceros a la izquierda borrados por Excel numérico
+            if dni.isdigit() and dni != '0' and len(dni) > 0 and len(dni) < 8:
+                dni = dni.zfill(8)
+                
+            # Prevenir colisiones de DNIs fantasmas
+            if dni == '0' or dni == '0.0':
+                dni = ''
             
             # Buscar variaciones comunes de cabeceras EN MAYÚSCULAS Y CON/SIN S
             nombre_raw = str(row.get('APELLIDOS Y NOMBRE', 

@@ -206,11 +206,11 @@
     window.onload = function () {
         buscarEgresado();
 
-        // Auto-update silencioso cada 15s
+        // Polling silencioso
         setInterval(() => {
             if (!document.getElementById('modal-egresado').classList.contains('hidden')) return;
             buscarEgresado(currentPage, true);
-        }, 15000);
+        }, 60000);
     };
 
     function buscarEgresado(pagina = 1, silent = false) {
@@ -260,7 +260,7 @@
                         </td>
                         <td class="px-6 py-3 font-medium text-slate-700 border-b border-slate-50">${egre.nombre}</td>
                         <td class="px-6 py-3 border-b border-slate-50">
-                            <div class="text-slate-600 font-bold">${egre.dni}</div>
+                            <div class="text-slate-600 font-bold">${String(egre.dni).startsWith('INV-') ? '-' : egre.dni}</div>
                             <div class="text-xs text-slate-400 font-mono">${egre.codigo}</div>
                         </td>
                         <td class="px-6 py-3 border-b border-slate-50">
@@ -295,37 +295,68 @@
     function actualizarControlesPaginacion() {
         const btnPrev = document.getElementById('btn-prev');
         const btnNext = document.getElementById('btn-next');
-        const select = document.getElementById('select-pagina');
+        const container = document.getElementById('pagination-numbers');
 
-        btnPrev.disabled = currentPage <= 1;
-        btnNext.disabled = currentPage >= totalPages;
+        if (btnPrev) btnPrev.disabled = currentPage <= 1;
+        if (btnNext) btnNext.disabled = currentPage >= totalPages;
 
-        select.innerHTML = '';
-        let startPage = Math.max(1, currentPage - 10);
-        let endPage = Math.min(totalPages, currentPage + 10);
+        if (!container) return;
+        container.innerHTML = '';
 
-        if (totalPages <= 20) {
-            startPage = 1; endPage = totalPages;
+        if (totalPages <= 1) return;
+
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, currentPage + 2);
+
+        const baseColorCls = 'sky';
+
+        const crearBotonPagina = (num) => {
+            const btn = document.createElement('button');
+            btn.innerText = num;
+            if (num === currentPage) {
+                btn.className = `bg-${baseColorCls}-600 text-white w-8 h-8 rounded shrink-0 font-bold shadow-sm transition-colors text-xs`;
+            } else {
+                btn.className = 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 w-8 h-8 rounded shrink-0 font-medium transition-colors text-xs';
+            }
+            btn.onclick = () => irAPagina(num);
+            return btn;
+        };
+
+        if (startPage > 1) {
+            container.appendChild(crearBotonPagina(1));
+            if (startPage > 2) {
+                const dots = document.createElement('span');
+                dots.className = 'px-1 text-slate-400 text-xs font-bold cursor-default tracking-widest';
+                dots.innerText = '...';
+                container.appendChild(dots);
+            }
         }
 
         for (let i = startPage; i <= endPage; i++) {
-            const opt = document.createElement('option');
-            opt.value = i;
-            opt.innerText = i;
-            if (i === currentPage) opt.selected = true;
-            select.appendChild(opt);
+            container.appendChild(crearBotonPagina(i));
         }
-    }
 
-    function cambiarPagina(delta) {
-        const nuevaPagina = currentPage + delta;
-        if (nuevaPagina >= 1 && nuevaPagina <= totalPages) {
-            buscarEgresado(nuevaPagina);
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                const dots = document.createElement('span');
+                dots.className = 'px-1 text-slate-400 text-xs font-bold cursor-default tracking-widest';
+                dots.innerText = '...';
+                container.appendChild(dots);
+            }
+            container.appendChild(crearBotonPagina(totalPages));
         }
     }
 
     function irAPagina(pagina) {
         buscarEgresado(parseInt(pagina));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cambiarPagina(delta) {
+        const nuevaPagina = currentPage + delta;
+        if (nuevaPagina >= 1 && nuevaPagina <= totalPages) {
+            irAPagina(nuevaPagina);
+        }
     }
 
     function nuevaBusqueda() {

@@ -177,9 +177,9 @@ def procesar_excel_invitados_async(file_bytes, evento_id, task_id):
     
     try:
         update_task_progress(task_id, 0, msg="Leyendo archivo Excel de Invitados VIP...")
-        df = pd.read_excel(io.BytesIO(file_bytes))
+        df = pd.read_excel(io.BytesIO(file_bytes), dtype=str)
         df = df.fillna('')
-        df.columns = df.columns.astype(str).str.strip()
+        df.columns = df.columns.astype(str).str.strip().str.upper()
         
         total_filas = len(df)
         update_task_progress(task_id, 0, total=total_filas, msg=f"Validando cabeceras y preparando {total_filas} registros...")
@@ -193,16 +193,20 @@ def procesar_excel_invitados_async(file_bytes, evento_id, task_id):
             dni = str(row.get('DNI', '')).strip()
             if dni.endswith('.0'): dni = dni[:-2]
             
-            # Buscar variaciones de la columna nombre
-            nombre_raw = str(row.get('Nombre Completo', row.get('NOMBRE COMPLETO', ''))).strip()
-            if not nombre_raw:
-                nombre_raw = str(row.get('Apellidos y Nombres', row.get('APELLIDOS Y NOMBRES', ''))).strip()
-            if not nombre_raw:
-                nombre_raw = str(row.get('Nombres', row.get('NOMBRES', ''))).strip()
+            # Restaurar ceros a la izquierda borrados por Excel numérico
+            if dni.isdigit() and dni != '0' and len(dni) > 0 and len(dni) < 8:
+                dni = dni.zfill(8)
+
+            # Prevenir colisiones de DNIs fantasmas
+            if dni == '0' or dni == '0.0':
+                dni = ''
+            
+            # Buscar variaciones de la columna nombre en mayúsculas
+            nombre_raw = str(row.get('NOMBRE COMPLETO', row.get('APELLIDOS Y NOMBRES', row.get('NOMBRES', row.get('APELLIDOS Y NOMBRE', ''))))).strip()
                 
             nombre = formatear_nombre_estetico(nombre_raw)
             
-            inst = str(row.get('Institución', row.get('INSTITUCION', ''))).strip()
+            inst = str(row.get('INSTITUCIÓN', row.get('INSTITUCION', ''))).strip()
             
             if not dni or len(dni) < 5:
                 errores.append(f"Fila {fila_num}: Falta DNI válido.")

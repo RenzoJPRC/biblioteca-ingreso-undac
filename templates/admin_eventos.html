@@ -224,7 +224,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/eventos.js') }}"></script>
+<script src="{{ url_for('static', filename='js/eventos.js') }}?v=3.0"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         inicializarEventos();

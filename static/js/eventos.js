@@ -4,12 +4,12 @@ let currentQuery = '';
 function inicializarEventos() {
     buscarEventos();
 
-    // Auto-update silencioso cada 15s
+    // Auto-update silencioso cada 60s
     setInterval(() => {
         if (!document.getElementById('modal-evento').classList.contains('hidden')) return; // No refrescar si el modal está abierto
         if (!document.getElementById('modal-excel').classList.contains('hidden')) return;
         buscarEventos(true);
-    }, 15000);
+    }, 60000);
 
     const searchInput = document.getElementById('search-input');
     let delayTimer;
@@ -23,17 +23,25 @@ function inicializarEventos() {
 
 function buscarEventos(silent = false) {
     fetch(`/admin/buscar_eventos?q=${currentQuery}&page=${currentPage}`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+            return res.json();
+        })
         .then(data => {
             if (data.status === 'success') {
                 renderizarTabla(data.data);
-                renderizarPaginacion(data.page, data.total_pages, data.total_items);
+                if (typeof renderizarPaginacion === 'function') {
+                    renderizarPaginacion(data.page, data.total_pages, data.total_items);
+                } else {
+                    console.warn("Falta la función renderizarPaginacion, pero la tabla cargará bien.");
+                }
             } else if (!silent) {
                 mostrarToastError("Error al cargar eventos: " + data.msg);
             }
         })
         .catch(err => {
-            if (!silent) mostrarToastError("Error de conexión");
+            console.error("Fetch Events Error:", err);
+            if (!silent) mostrarToastError("Fallo en la carga: " + err.message);
         });
 }
 
@@ -289,13 +297,17 @@ function uploadExcel(e) {
             btn.disabled = false;
             btn.innerHTML = `<i class="ph ph-upload-simple"></i> Cargar Excel`;
 
-            if (data.status === 'success') {
-                mostrarToastExito(data.msg);
+            if (data.status === 'success' || data.status === 'processing') {
+                mostrarToastExito(data.msg || "Archivo subido correctamente. Procesando invitados...");
                 document.getElementById('modal-excel').classList.add('hidden');
-                buscarEventos(); // Actualizar tabla para ver el nuevo conteo de invitados
+                form.reset();
+
+                setTimeout(() => {
+                    buscarEventos(true);
+                }, 1500);
             } else {
-                mostrarToastError(data.msg);
-                alert("Error: " + data.msg);
+                mostrarToastError(data.msg || "Ocurrió un error al procesar el archivo.");
+                alert("Error: " + (data.msg || "Ocurrió un error"));
             }
         })
         .catch(err => {
@@ -303,6 +315,22 @@ function uploadExcel(e) {
             btn.innerHTML = `<i class="ph ph-upload-simple"></i> Cargar Excel`;
             mostrarToastError("Error en la petición de red");
         });
+}
+
+function mostrarToastExito(message) {
+    if (typeof showToast === 'function') {
+        showToast(message, 'success');
+    } else {
+        alert(message);
+    }
+}
+
+function mostrarToastError(message) {
+    if (typeof showToast === 'function') {
+        showToast(message, 'error');
+    } else {
+        alert('Error: ' + message);
+    }
 }
 
 // --- Paginación Global Override ---

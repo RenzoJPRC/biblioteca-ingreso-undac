@@ -26,6 +26,8 @@ function inicializarFormularioVisitante() {
 
                 if (responseData.status === 'success') {
                     if (typeof showToast !== 'undefined') showToast("Visitante registrado con éxito", "success");
+                    document.getElementById('modal-nuevo-visitante').classList.add('hidden');
+                    form.reset();
                     setTimeout(() => window.location.reload(), 1000);
                 } else {
                     if (typeof showToast !== 'undefined') showToast("Error al guardar: " + responseData.msg, "error");
@@ -39,6 +41,27 @@ function inicializarFormularioVisitante() {
             }
         });
     }
+}
+
+function vaciarBdVisitantes() {
+    if (!confirm("⚠️ ATENCIÓN: Estás a punto de ELIMINAR TODOS los visitantes de la base de datos.\nEsta acción es irreversible.\n¿Estás completamente seguro de continuar?")) return;
+
+    fetch('/admin/vaciar_visitantes', {
+        method: 'POST'
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert(data.msg);
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.msg);
+            }
+        })
+        .catch(err => {
+            alert("Ocurrió un error en el servidor.");
+            console.error(err);
+        });
 }
 
 // Helper para cambiar clases

@@ -26,7 +26,7 @@ function inicializarAdminPersonal() {
     setInterval(() => {
         if (!document.getElementById('modal-personal').classList.contains('hidden')) return;
         buscarPersonal(currentPage, true);
-    }, 15000);
+    }, 60000);
 }
 
 function buscarPersonal(pagina = 1, silent = false) {
@@ -41,12 +41,17 @@ function buscarPersonal(pagina = 1, silent = false) {
         .then(data => {
             const tbody = document.getElementById('tabla-body');
             if (!tbody) return;
+            currentPage = data.pagination ? data.pagination.page : data.page;
+            totalPages = data.pagination ? data.pagination.total_pages : data.total_pages;
 
-            currentPage = data.pagination.page;
-            totalPages = data.pagination.total_pages;
+            const info = document.getElementById('info-paginacion');
+            if (info) {
+                const totalItems = data.pagination ? data.pagination.total_items : data.total_items;
+                info.innerText = `Mostrando ${data.data.length} de ${totalItems} registros`;
+            }
 
             if (data.data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-slate-400"><i class="ph ph-empty text-3xl mb-2 block"></i>No hay personal encontrado</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-slate-400"><i class="ph ph-empty text-3xl mb-2 block"></i>No hay personal encontrado</td></tr>`;
             } else {
                 let html = "";
                 data.data.forEach(p => {
@@ -59,7 +64,7 @@ function buscarPersonal(pagina = 1, silent = false) {
                                     ${isSeleccionado ? 'checked' : ''}
                                     class="check-fila-personal w-4 h-4 text-purple-600 bg-slate-100 border-slate-300 rounded focus:ring-purple-500 focus:ring-2 cursor-pointer transition-all">
                             </td>
-                            <td class="px-6 py-3 font-mono text-slate-500">${p.dni}</td>
+                            <td class="px-6 py-3 font-mono text-slate-500">${String(p.dni).startsWith('INV-') ? '-' : p.dni}</td>
                             <td class="px-6 py-3 font-bold text-slate-700">${p.nombre}</td>
                             <td class="px-6 py-3 text-slate-600">${p.oficina}</td>
                             <td class="px-6 py-3">
@@ -99,38 +104,67 @@ function buscarPersonal(pagina = 1, silent = false) {
 function actualizarControlesPaginacion() {
     const btnPrev = document.getElementById('btn-prev');
     const btnNext = document.getElementById('btn-next');
-    const select = document.getElementById('select-pagina');
+    const container = document.getElementById('pagination-numbers');
 
-    if (!btnPrev || !btnNext || !select) return;
+    if (btnPrev) btnPrev.disabled = currentPage <= 1;
+    if (btnNext) btnNext.disabled = currentPage >= totalPages;
 
-    btnPrev.disabled = currentPage <= 1;
-    btnNext.disabled = currentPage >= totalPages;
+    if (!container) return;
+    container.innerHTML = '';
 
-    select.innerHTML = '';
-    let startPage = Math.max(1, currentPage - 10);
-    let endPage = Math.min(totalPages, currentPage + 10);
+    if (totalPages <= 1) return;
 
-    if (totalPages <= 20) {
-        startPage = 1; endPage = totalPages;
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
+
+    const baseColorCls = typeof PAGINATION_COLOR_CLASS !== 'undefined' ? PAGINATION_COLOR_CLASS : 'sky';
+
+    const crearBotonPagina = (num) => {
+        const btn = document.createElement('button');
+        btn.innerText = num;
+        if (num === currentPage) {
+            btn.className = `bg-${baseColorCls}-600 text-white w-8 h-8 rounded shrink-0 font-bold shadow-sm transition-colors text-xs`;
+        } else {
+            btn.className = 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 w-8 h-8 rounded shrink-0 font-medium transition-colors text-xs';
+        }
+        btn.onclick = () => irAPagina(num);
+        return btn;
+    };
+
+    if (startPage > 1) {
+        container.appendChild(crearBotonPagina(1));
+        if (startPage > 2) {
+            const dots = document.createElement('span');
+            dots.className = 'px-1 text-slate-400 text-xs font-bold cursor-default tracking-widest';
+            dots.innerText = '...';
+            container.appendChild(dots);
+        }
     }
 
     for (let i = startPage; i <= endPage; i++) {
-        const opt = document.createElement('option');
-        opt.value = i;
-        opt.innerText = i;
-        if (i === currentPage) opt.selected = true;
-        select.appendChild(opt);
+        container.appendChild(crearBotonPagina(i));
+    }
+
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            const dots = document.createElement('span');
+            dots.className = 'px-1 text-slate-400 text-xs font-bold cursor-default tracking-widest';
+            dots.innerText = '...';
+            container.appendChild(dots);
+        }
+        container.appendChild(crearBotonPagina(totalPages));
     }
 }
 
 function irAPagina(pagina) {
     buscarPersonal(parseInt(pagina));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function cambiarPagina(delta) {
     const nuevaPagina = currentPage + delta;
     if (nuevaPagina >= 1 && nuevaPagina <= Math.max(1, totalPages)) {
-        buscarPersonal(nuevaPagina);
+        irAPagina(nuevaPagina);
     }
 }
 

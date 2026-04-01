@@ -122,9 +122,10 @@ def procesar_excel_personal_async(file_bytes, task_id):
     
     try:
         update_task_progress(task_id, 0, msg="Leyendo archivo Excel de Personal...")
-        df = pd.read_excel(io.BytesIO(file_bytes))
+        # Leemos garantizando texto puro
+        df = pd.read_excel(io.BytesIO(file_bytes), dtype=str)
         df = df.fillna('')
-        df.columns = df.columns.astype(str).str.strip()
+        df.columns = df.columns.astype(str).str.strip().str.upper()
         
         total_filas = len(df)
         update_task_progress(task_id, 0, total=total_filas, msg=f"Validando cabeceras y preparando {total_filas} registros...")
@@ -136,15 +137,24 @@ def procesar_excel_personal_async(file_bytes, task_id):
             
             dni = str(row.get('DNI', '')).strip()
             if dni.endswith('.0'): dni = dni[:-2]
+            
+            # Restaurar ceros a la izquierda borrados por Excel numérico
+            if dni.isdigit() and dni != '0' and len(dni) > 0 and len(dni) < 8:
+                dni = dni.zfill(8)
+                
+            # Prevenir colisiones de DNIs fantasmas
+            if dni == '0' or dni == '0.0':
+                dni = ''
 
-            nombre_raw = str(row.get('Apellidos y Nombres', row.get('APELLIDOS Y NOMBRES', ''))).strip()
+            # Mapeo universal en mayúsculas
+            nombre_raw = str(row.get('APELLIDOS Y NOMBRES', row.get('NOMBRE COMPLETO', row.get('APELLIDOS Y NOMBRE', '')))).strip()
             nombre = formatear_nombre_estetico(nombre_raw)
             
-            oficina = str(row.get('Oficina', row.get('OFICINA', ''))).strip()
-            c_inst = str(row.get('Correo Institucional', row.get('CORREO INSTITUCIONAL', ''))).strip()
-            c_per = str(row.get('Correo Personal', row.get('CORREO PERSONAL', ''))).strip()
+            oficina = str(row.get('OFICINA', '')).strip()
+            c_inst = str(row.get('CORREO INSTITUCIONAL', '')).strip()
+            c_per = str(row.get('CORREO PERSONAL', row.get('CORREO', ''))).strip()
             
-            telefono = str(row.get('Teléfono', row.get('TELEFONO', ''))).strip()
+            telefono = str(row.get('TELÉFONO', row.get('TELEFONO', row.get('CELULAR', '')))).strip()
             if telefono.endswith('.0'): telefono = telefono[:-2]
             
             if not nombre: 

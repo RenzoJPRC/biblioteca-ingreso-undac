@@ -3,7 +3,9 @@ import io
 from db import get_db_connection
 from utils.validaciones import verificar_dni_global, formatear_nombre_estetico
 from utils.task_manager import update_task_progress, finish_task
+import functools
 
+@functools.lru_cache(maxsize=128)
 def obtener_todos_visitantes(query=""):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -22,6 +24,7 @@ def obtener_todos_visitantes(query=""):
     return lista
 
 def registrar_nuevo_visitante(data):
+    obtener_todos_visitantes.cache_clear()
     dni = data.get('dni')
     inst = data.get('institucion') or "Sin Institución"
     
@@ -44,6 +47,7 @@ def registrar_nuevo_visitante(data):
             conn.close()
 
 def actualizar_visitante(data):
+    obtener_todos_visitantes.cache_clear()
     vis_id = data.get('id')
     dni = data.get('dni')
     
@@ -66,7 +70,22 @@ def actualizar_visitante(data):
     finally:
         if 'conn' in locals(): conn.close()
 
+def borrar_todos_visitantes():
+    obtener_todos_visitantes.cache_clear()
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("TRUNCATE TABLE Visitantes")
+        conn.commit()
+        return {'status': 'success', 'msg': 'Directorio de Visitantes vaciado completamente.'}
+    except Exception as e:
+        return {'status': 'error', 'msg': f"No se pudo vaciar la BD: {str(e)}"}
+    finally:
+        if 'conn' in locals():
+            conn.close()
+
 def borrar_visitante(id_vis):
+    obtener_todos_visitantes.cache_clear()
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -83,15 +102,16 @@ def borrar_visitante(id_vis):
         if 'conn' in locals(): conn.close()
 
 def procesar_excel_visitantes_async(file_bytes, task_id):
+    obtener_todos_visitantes.cache_clear()
     conn = get_db_connection()
     errores = []
     contador = 0
     
     try:
         update_task_progress(task_id, 0, msg="Leyendo archivo Excel de Visitantes...")
-        df = pd.read_excel(io.BytesIO(file_bytes))
+        df = pd.read_excel(io.BytesIO(file_bytes), dtype=str)
         df = df.fillna('')
-        df.columns = df.columns.astype(str).str.strip()
+        df.columns = df.columns.astype(str).str.strip().str.upper()
         
         total_filas = len(df)
         update_task_progress(task_id, 0, total=total_filas, msg=f"Validando cabeceras y preparando {total_filas} registros...")
@@ -104,13 +124,21 @@ def procesar_excel_visitantes_async(file_bytes, task_id):
             dni = str(row.get('DNI', '')).strip()
             if dni.endswith('.0'): dni = dni[:-2]
             
-            nombre_raw = str(row.get('Nombre Completo', row.get('NOMBRE COMPLETO', ''))).strip()
+            # Restaurar ceros a la izquierda borrados por Excel numérico
+            if dni.isdigit() and dni != '0' and len(dni) > 0 and len(dni) < 8:
+                dni = dni.zfill(8)
+
+            # Prevenir colisiones de DNIs fantasmas
+            if dni == '0' or dni == '0.0':
+                dni = ''
+            
+            nombre_raw = str(row.get('NOMBRE COMPLETO', row.get('APELLIDOS Y NOMBRES', row.get('APELLIDOS Y NOMBRE', '')))).strip()
             nombre = formatear_nombre_estetico(nombre_raw)
             
-            inst = str(row.get('Institución', row.get('INSTITUCION', 'Sin Institución'))).strip()
+            inst = str(row.get('INSTITUCIÓN', row.get('INSTITUCION', 'Sin Institución'))).strip()
             if not inst: inst = 'Sin Institución'
             
-            correo = str(row.get('Correo', row.get('CORREO', ''))).strip()
+            correo = str(row.get('CORREO', '')).strip()
             
             if not nombre:
                 errores.append(f"Fila {fila_num}: Celda de nombre vacía.")

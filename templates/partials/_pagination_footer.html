@@ -5,11 +5,8 @@
         <i class="ph ph-caret-left text-lg"></i> Anterior
     </button>
 
-    <div class="flex items-center gap-2">
-        <span class="text-xs font-bold text-slate-400 uppercase">Página</span>
-        <select id="select-pagina" onchange="irAPagina(this.value)"
-            class="bg-white border border-slate-300 text-slate-700 text-xs rounded px-2 py-1 outline-none focus:border-{{ base_color }}-500 font-bold">
-        </select>
+    <div class="flex items-center gap-1" id="pagination-numbers">
+        <!-- JS inyectará botones numéricos dinámicos aquí -->
     </div>
 
     <button onclick="cambiarPagina(1)" id="btn-next"

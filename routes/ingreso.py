@@ -30,9 +30,13 @@ def procesar_ingreso():
     piso = data.get('piso')
     sede = data.get('sede', 'Central')
 
-    if not codigo: return jsonify({'status': 'error', 'msg': 'Código vacío'})
+    codigo_str = str(codigo).strip()
+    
+    # Prevenir inputs basura del escáner (E.g: "-", " - ", "--", "0", vacíos, o muy cortos)
+    if not codigo_str or codigo_str in ['0', '0.0'] or codigo_str.replace('-', '').strip() == '' or len(codigo_str) < 4:
+        return jsonify({'status': 'error', 'msg': 'Posible Lectura Errónea del Escáner'})
 
-    res = registrar_ingreso_general(codigo, piso, sede)
+    res = registrar_ingreso_general(codigo_str, piso, sede)
     return jsonify(res)
 
 # --- RUTAS DE EVENTOS ---
@@ -61,8 +65,8 @@ def procesar_evento():
     codigo = data.get('codigo')
     evento_id = data.get('evento_id')
     
-    if not codigo or not evento_id: 
-        return jsonify({'status': 'error', 'msg': 'Faltan datos requeridos'})
+    if not codigo or str(codigo).strip() in ['0', '0.0', ''] or not evento_id: 
+        return jsonify({'status': 'error', 'msg': 'Datos inválidos o faltantes'})
         
-    res = procesar_ingreso_evento(codigo, evento_id)
+    res = procesar_ingreso_evento(str(codigo).strip(), evento_id)
     return jsonify(res)

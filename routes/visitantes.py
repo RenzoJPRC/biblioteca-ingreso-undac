@@ -50,3 +50,9 @@ def subir_excel_visitantes():
 def eliminar_visitante(id):
     resultado = borrar_visitante(id)
     return jsonify(resultado)
+
+@visitantes_bp.route('/vaciar_visitantes', methods=['POST', 'DELETE'])
+def vaciar_visitantes_route():
+    from utils.queries_visitantes import borrar_todos_visitantes
+    resultado = borrar_todos_visitantes()
+    return jsonify(resultado)

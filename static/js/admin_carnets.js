@@ -6,11 +6,11 @@ let selectedIds = new Set(); // Almacena IDs seleccionados globalmente
 window.onload = function () {
     buscarAlumno();
 
-    // Auto-update silencioso cada 15s
+    // Auto-update silencioso cada 60s
     setInterval(() => {
         if (!document.getElementById('modal-editar').classList.contains('hidden')) return;
         buscarAlumno(currentPage, true);
-    }, 15000);
+    }, 60000);
 };
 
 // --- BÚSQUEDA Y RENDERIZADO ---
@@ -78,11 +78,17 @@ function buscarAlumno(pagina = 1, silent = false) {
                     <td class="px-6 py-3 text-slate-500 text-xs border-b border-slate-50">${alumno.escuela}</td>
                     <td class="px-6 py-3 font-mono text-xs border-b border-slate-50">${fechaManual}</td>
                     <td class="px-6 py-3 border-b border-slate-50">${estadoHtml}</td>
-                    <td class="px-6 py-3 text-center border-b border-slate-50">
-                        <button onclick="abrirModal(${alumno.id}, '${alumno.nombre}', '${alumno.fecha_manual || ''}')" 
-                                class="text-slate-400 hover:text-blue-600 p-2 rounded-full hover:bg-blue-50 transition-all" title="Editar Vencimiento">
-                            <i class="ph ph-pencil-simple text-lg"></i>
-                        </button>
+                    <td class="px-6 py-3 text-center border-b border-slate-50 relative">
+                        <div class="flex justify-center gap-1 opacity-100 transition-opacity">
+                            <button onclick='abrirModal(${JSON.stringify(alumno).replace(/'/g, "&#39;")})' 
+                                    class="text-slate-400 hover:text-sky-600 p-2 rounded-full hover:bg-sky-50 transition-all" title="Editar Alumno">
+                                <i class="ph ph-pencil-simple text-lg"></i>
+                            </button>
+                            <button onclick="eliminarAlumno(${alumno.id}, '${alumno.nombre}')" 
+                                    class="text-slate-400 hover:text-rose-600 p-2 rounded-full hover:bg-rose-50 transition-all font-bold" title="Eliminar Alumno">
+                                <i class="ph ph-trash text-lg"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>`;
             });
@@ -99,44 +105,68 @@ function buscarAlumno(pagina = 1, silent = false) {
 function actualizarControlesPaginacion() {
     const btnPrev = document.getElementById('btn-prev');
     const btnNext = document.getElementById('btn-next');
-    const select = document.getElementById('select-pagina');
+    const container = document.getElementById('pagination-numbers');
 
-    btnPrev.disabled = currentPage <= 1;
-    btnNext.disabled = currentPage >= totalPages;
+    if (btnPrev) btnPrev.disabled = currentPage <= 1;
+    if (btnNext) btnNext.disabled = currentPage >= totalPages;
 
-    // Llenar select de paginas
-    select.innerHTML = '';
-    /* Optimización: Si son muchas páginas, no renderizar todas en el select, 
-       pero por UX simple renderizaremos hasta 100 max o rango cercano */
+    if (!container) return;
+    container.innerHTML = '';
 
-    let startPage = Math.max(1, currentPage - 10);
-    let endPage = Math.min(totalPages, currentPage + 10);
+    if (totalPages <= 1) return; // Ocultar si hay 1 sola página
 
-    // Siempre incluir la 1 y la ultima si estan lejos? 
-    // Por simplicidad, mostramos un rango dinámico
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
 
-    if (totalPages <= 20) {
-        startPage = 1; endPage = totalPages;
+    const baseColorCls = typeof PAGINATION_COLOR_CLASS !== 'undefined' ? PAGINATION_COLOR_CLASS : 'sky';
+
+    const crearBotonPagina = (num) => {
+        const btn = document.createElement('button');
+        btn.innerText = num;
+        if (num === currentPage) {
+            btn.className = `bg-${baseColorCls}-600 text-white w-8 h-8 rounded shrink-0 font-bold shadow-sm transition-colors text-xs`;
+        } else {
+            btn.className = 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 w-8 h-8 rounded shrink-0 font-medium transition-colors text-xs';
+        }
+        btn.onclick = () => irAPagina(num);
+        return btn;
+    };
+
+    if (startPage > 1) {
+        container.appendChild(crearBotonPagina(1));
+        if (startPage > 2) {
+            const dots = document.createElement('span');
+            dots.className = 'px-1 text-slate-400 text-xs font-bold cursor-default tracking-widest';
+            dots.innerText = '...';
+            container.appendChild(dots);
+        }
     }
 
     for (let i = startPage; i <= endPage; i++) {
-        const opt = document.createElement('option');
-        opt.value = i;
-        opt.innerText = i;
-        if (i === currentPage) opt.selected = true;
-        select.appendChild(opt);
+        container.appendChild(crearBotonPagina(i));
+    }
+
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            const dots = document.createElement('span');
+            dots.className = 'px-1 text-slate-400 text-xs font-bold cursor-default tracking-widest';
+            dots.innerText = '...';
+            container.appendChild(dots);
+        }
+        container.appendChild(crearBotonPagina(totalPages));
     }
 }
 
 function cambiarPagina(delta) {
     const nuevaPagina = currentPage + delta;
     if (nuevaPagina >= 1 && nuevaPagina <= totalPages) {
-        buscarAlumno(nuevaPagina);
+        irAPagina(nuevaPagina);
     }
 }
 
 function irAPagina(pagina) {
     buscarAlumno(parseInt(pagina));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // Wrapper para el botón de buscar (resetea a pagina 1)
@@ -245,11 +275,19 @@ function accionGlobal(accion) {
         });
 }
 
-// --- MODAL DE EDICIÓN ---
-function abrirModal(id, nombre, fecha) {
-    document.getElementById('modal-alumno-id').value = id;
-    document.getElementById('modal-nombre-alumno').innerText = nombre;
-    document.getElementById('modal-fecha').value = fecha;
+// --- MODAL DE EDICIÓN DE ALUMNO ---
+function abrirModal(alumno) {
+    document.getElementById('modal-alumno-id').value = alumno.id || '';
+    document.getElementById('modal-nombre').value = alumno.nombre || '';
+
+    // Si la DB mandó INV- lo mostramos vacío para edición
+    let dVal = String(alumno.dni || '');
+    document.getElementById('modal-dni').value = dVal.startsWith('INV-') ? '' : dVal;
+
+    document.getElementById('modal-codigo').value = alumno.codigo || '';
+    document.getElementById('modal-escuela').value = alumno.escuela || '';
+    document.getElementById('modal-fecha').value = alumno.fecha_manual || '';
+
     document.getElementById('modal-editar').classList.remove('hidden');
 }
 
@@ -257,24 +295,74 @@ function cerrarModal() {
     document.getElementById('modal-editar').classList.add('hidden');
 }
 
-function guardarFecha() {
-    const id = document.getElementById('modal-alumno-id').value;
-    const fecha = document.getElementById('modal-fecha').value;
+function guardarAlumnoCompleto() {
+    const data = {
+        id: document.getElementById('modal-alumno-id').value,
+        nombre: document.getElementById('modal-nombre').value,
+        dni: document.getElementById('modal-dni').value,
+        codigo: document.getElementById('modal-codigo').value,
+        escuela: document.getElementById('modal-escuela').value,
+        fecha: document.getElementById('modal-fecha').value
+    };
 
-    fetch('/admin/actualizar_carnet', {
+    fetch('/admin/actualizar_alumno_completo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: id, fecha: fecha })
+        body: JSON.stringify(data)
     })
         .then(res => res.json())
-        .then(data => {
-            if (data.status === 'success') {
+        .then(resData => {
+            if (resData.status === 'success') {
+                if (typeof showToast !== 'undefined') showToast("Alumno actualizado con éxito", "success");
                 cerrarModal();
                 buscarAlumno(currentPage);
             } else {
-                alert('Error: ' + data.msg);
+                if (typeof showToast !== 'undefined') showToast('Error: ' + resData.msg, "error");
+                else alert('Error: ' + resData.msg);
             }
-        });
+        })
+        .catch(err => console.error(err));
+}
+
+function eliminarAlumno(id, nombre) {
+    if (!confirm(`¿Estás SEGURO de eliminar permanentemente al alumno "${nombre}"? Esta acción borrará también su historial.`)) {
+        return;
+    }
+
+    fetch(`/admin/eliminar_alumno/${id}`, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                if (typeof showToast !== 'undefined') showToast("Alumno eliminado", "success");
+                buscarAlumno(currentPage);
+            } else {
+                if (typeof showToast !== 'undefined') showToast('Error: ' + data.msg, "error");
+                else alert('Error: ' + data.msg);
+            }
+        })
+        .catch(err => console.error(err));
+}
+
+function vaciarBdAlumnos() {
+    if (!confirm("⚠️ ¡ADVERTENCIA EXTREMA!\n\n¿Estás SEGURO de VACIAR permanentemente TODA la tabla de Alumnos y Carnets?\nEsta acción es irreversible y borrará a miles de estudiantes.\n\nEscribe 'CONFIRMAR' para proceder:")) return;
+
+    const validacion = prompt("Escribe CONFIRMAR para vaciar la base de datos de Alumnos:");
+    if (validacion !== "CONFIRMAR") {
+        alert("Operación cancelada. Escribiste incorrectamente.");
+        return;
+    }
+
+    fetch(`/admin/vaciar_alumnos`, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert("La base de datos de Alumnos ha sido purgada completamente.");
+                window.location.reload();
+            } else {
+                alert('Error al vaciar BD: ' + data.msg);
+            }
+        })
+        .catch(err => console.error(err));
 }
 
 // Buscador con Enter

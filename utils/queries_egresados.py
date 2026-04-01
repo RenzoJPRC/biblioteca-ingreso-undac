@@ -3,7 +3,9 @@ from utils.validaciones import verificar_dni_global, formatear_nombre_estetico
 import pandas as pd
 import io
 from utils.task_manager import update_task_progress, finish_task
+import functools
 
+@functools.lru_cache(maxsize=128)
 def buscar_egresados_paginados(query, page, limit):
     offset = (page - 1) * limit
     
@@ -55,6 +57,7 @@ def buscar_egresados_paginados(query, page, limit):
 
 
 def guardar_egresado_individual(data):
+    buscar_egresados_paginados.cache_clear()
     egresado_id = data.get('id')
     nombre = data.get('nombre')
     dni = data.get('dni')
@@ -101,6 +104,7 @@ def guardar_egresado_individual(data):
 
 
 def procesar_excel_egresados_async(file_bytes, task_id):
+    buscar_egresados_paginados.cache_clear()
     conn = get_db_connection()
     contador = 0
     errores = []
@@ -108,8 +112,8 @@ def procesar_excel_egresados_async(file_bytes, task_id):
     try:
         update_task_progress(task_id, 0, msg="Leyendo archivo Excel...")
         
-        # Leemos sin dtype para que Pandas no se congele si hay celdas vacías o formatos distintos
-        df = pd.read_excel(io.BytesIO(file_bytes))
+        # Leemos garantizando que todos los datos se procesen como texto puro
+        df = pd.read_excel(io.BytesIO(file_bytes), dtype=str)
         df = df.fillna('')
         
         # Limpiamos los espacios en blanco y forzamos mayúsculas
@@ -127,6 +131,14 @@ def procesar_excel_egresados_async(file_bytes, task_id):
             dni = str(row.get('DNI', '')).strip()
             if dni.endswith('.0'): 
                 dni = dni[:-2]
+                
+            # Restaurar ceros a la izquierda borrados por Excel numérico
+            if dni.isdigit() and dni != '0' and len(dni) > 0 and len(dni) < 8:
+                dni = dni.zfill(8)
+                
+            # Prevenir colisiones de DNIs fantasmas
+            if dni == '0' or dni == '0.0':
+                dni = ''
 
             # Mapear a las columnas aceptando nombres en mayúsculas
             nombre_raw = str(row.get('APELLIDOS Y NOMBRES', row.get('APELLIDOS Y NOMBRE', row.get('NOMBRE COMPLETO', '')))).strip()
@@ -214,6 +226,7 @@ def procesar_excel_egresados_async(file_bytes, task_id):
 
 
 def eliminar_egresado_permanente(id):
+    buscar_egresados_paginados.cache_clear()
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -231,6 +244,7 @@ def eliminar_egresado_permanente(id):
         return False, f"No se pudo eliminar: {str(e)}"
 
 def eliminar_egresados_masivo(ids):
+    buscar_egresados_paginados.cache_clear()
     if not ids:
         return False, "No hay IDs para eliminar"
         
@@ -256,6 +270,7 @@ def eliminar_egresados_masivo(ids):
             conn.close()
 
 def vaciar_egresados_db():
+    buscar_egresados_paginados.cache_clear()
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
