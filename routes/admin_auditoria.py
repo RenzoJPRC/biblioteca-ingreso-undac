@@ -7,29 +7,43 @@ admin_auditoria_bp = Blueprint('admin_auditoria', __name__, url_prefix='/admin/a
 def traducir_accion(accion_raw):
     if not accion_raw: return "Acción Desconocida"
     a = accion_raw.upper()
-    if 'GUARDAR_EVENTO' in a: return 'Crear Evento'
-    if 'ELIMINAR_EVENTO' in a: return 'Eliminar Evento'
-    if 'VISITANTES/ELIMINAR' in a: return 'Borrar Visitante'
-    if 'VISITANTES/VACIAR' in a: return 'Vaciar Visitantes'
+    
+    # === IMPORTACIONES & EXCEL ===
+    if 'SUBIR_EXCEL_EGRESADOS' in a: return 'Importar Egresados'
+    if 'SUBIR_EXCEL_PERSONAL' in a: return 'Importar Personal'
     if 'PROCESAR_EXCEL_VISITANTES' in a: return 'Importar Visitantes'
-    if 'ELIMINAR_ALUMNOS_MASIVO' in a: return 'Borrar Alumnos Masivo'
-    if 'ACTUALIZAR_CARNET_MASIVO' in a: return 'Alterar Carnets Masivo'
+    if 'EGRESADOS/IMPORTAR' in a: return 'Importar Egresados'
+    if 'PERSONAL/IMPORTAR' in a: return 'Importar Personal'
+    if 'SUBIR_EXCEL' in a: return 'Importar Alumnos'  # Genérico de Alumnos
+    
+    # === VACIADOS & DDL ===
+    if 'VACIAR_EGRESADOS' in a or 'EGRESADOS/VACIAR' in a: return 'Vaciar Egresados'
+    if 'VACIAR_ALUMNOS' in a: return 'Vaciar Alumnos'
+    if 'VACIAR_PERSONAL' in a or 'PERSONAL/VACIAR' in a: return 'Vaciar Personal'
+    if 'VACIAR_VISITANTES' in a or 'VISITANTES/VACIAR' in a: return 'Vaciar Visitantes'
+    
+    # === ELIMINACIONES & DELETES ===
+    if 'ELIMINAR_ALUMNOS_MASIVO' in a: return 'Borrar Alumnos (Masivo)'
+    if 'ELIMINAR_EGRESADOS_MASIVO' in a or 'EGRESADOS/ELIMINAR' in a: return 'Borrar Egresados (Masivo)'
+    if 'ELIMINAR_PERSONAL_MASIVO' in a or 'PERSONAL/ELIMINAR' in a: return 'Borrar Personal (Masivo)'
+    if 'ELIMINAR_VISITANTE' in a or 'VISITANTES/ELIMINAR' in a: return 'Borrar Visitante'
+    if 'ELIMINAR_EVENTO' in a: return 'Eliminar Evento'
+    
+    # === MODIFICACIONES & ALTAS ===
+    if 'ACTUALIZAR_CARNET_MASIVO' in a: return 'Alterar Carnets (Masivo)'
     if 'ACTUALIZAR_CARNET_GLOBAL' in a: return 'Alterar Carnets (Global)'
-    if 'SUBIR_EXCEL' in a: return 'Importar Alumnos'
-    if 'BACKUP/GENERAR' in a: return 'Exportar Backup .ZIP'
+    if 'EGRESADOS/ACCION_MASIVA' in a: return 'Alterar Egresados'
+    if 'GUARDAR_EGRESADO' in a: return 'Crear/Editar Egresado'
+    if 'GUARDAR_PERSONAL' in a: return 'Crear/Editar Personal'
     if 'AGREGAR_VISITANTE' in a: return 'Crear Visitante'
-    if 'ELIMINAR_VISITANTE' in a: return 'Borrar Visitante'
+    if 'GUARDAR_EVENTO' in a: return 'Crear Evento'
+    
+    # === SISTEMA & RBAC ===
+    if 'BACKUP/GENERAR' in a: return 'Exportar Backup .ZIP'
     if 'ACCESOS/CREAR' in a: return 'Crear Gestor RBAC'
     if 'ACCESOS/ELIMINAR' in a: return 'Eliminar Gestor RBAC'
     if 'ACCESOS/EDITAR' in a: return 'Editar Gestor RBAC'
-    if 'GUARDAR_EGRESADO' in a: return 'Registrar Múltiple Egresado'
-    if 'EGRESADOS/ELIMINAR' in a: return 'Eliminar Egresado'
-    if 'EGRESADOS/VACIAR' in a: return 'Vaciar Egresados'
-    if 'EGRESADOS/IMPORTAR' in a: return 'Importar Egresados'
-    if 'EGRESADOS/ACCION_MASIVA' in a: return 'Alterar Egresados Max'
-    if 'PERSONAL/ELIMINAR' in a: return 'Eliminar Personal'
-    if 'PERSONAL/VACIAR' in a: return 'Vaciar Personal'
-    if 'PERSONAL/IMPORTAR' in a: return 'Importar Personal'
+    
     return accion_raw
 
 def parsear_detalle(detalle_str):
