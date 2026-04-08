@@ -2,4 +2,4 @@ Flask
 pandas
 openpyxl
 pyodbc
-python-dotenv
+python-dotenvwaitress

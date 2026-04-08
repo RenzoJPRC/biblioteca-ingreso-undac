@@ -101,5 +101,10 @@ app.register_blueprint(admin_auditoria_bp)
 app.register_blueprint(admin_backup_bp)
 
 if __name__ == '__main__':
-    # Configura tu IP y Puerto aquí - 0.0.0.0 permite conexiones desde cualquier IP
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Entorno de Producción Multihilo WSGI (Waitress)
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    print(f"[*] Iniciando Servidor WSGI Waitress en el puerto {port} con 6 hilos concurrentes...")
+    print("[*] (Despliegue Multi-Threading para soportar escaneos en paralelo sin cuellos de botella)")
+    from waitress import serve
+    serve(app, host='0.0.0.0', port=port, threads=6)
