@@ -33,7 +33,10 @@ def generar():
             'Visitantes': "SELECT * FROM Visitantes",
             'EventosEspeciales': "SELECT * FROM Eventos",
             'UsuariosSistema': "SELECT * FROM UsuariosSistema",
-            'AdminAuditLog': "SELECT * FROM AdminAuditLog"
+            'AdminAuditLog': "SELECT * FROM AdminAuditLog",
+            'Libros_BD_Externa': "SELECT * FROM Libros",
+            'Prestamos_BD_Externa': "SELECT * FROM Prestamos",
+            'Facultades_BD_Externa': "SELECT * FROM Facultades"
         }
         
         memory_file = io.BytesIO()

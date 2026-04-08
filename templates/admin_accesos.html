@@ -49,9 +49,13 @@
                     <td class="px-6 py-4">
                         {% if reg[3] == 'SuperAdmin' %}
                         <span
-                            class="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded font-bold">SuperAdmin</span>
+                            class="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded font-bold uppercase">SuperAdmin</span>
+                        {% elif reg[3] == 'Supervisor' %}
+                        <span
+                            class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded font-bold uppercase">Supervisor</span>
                         {% else %}
-                        <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded font-bold">Supervisor</span>
+                        <span class="bg-amber-100 text-amber-700 text-xs px-2 py-1 rounded font-bold uppercase">{{
+                            reg[3] }}</span>
                         {% endif %}
                     </td>
                     <td class="px-6 py-4">
@@ -78,6 +82,7 @@
                                 <i class="ph-bold ph-pencil-simple"></i>
                             </button>
                             {% if reg[1] != 'admin' %}
+                            {% if reg[3] in ['SuperAdmin', 'Supervisor'] %}
                             <form action="/admin/accesos/eliminar/{{ reg[0] }}" method="POST" class="inline"
                                 onsubmit="return confirm('¿Seguro que deseas eliminar esta cuenta permanentemente?');">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -86,6 +91,7 @@
                                     <i class="ph-bold ph-trash"></i>
                                 </button>
                             </form>
+                            {% endif %}
                             {% else %}
                             <span class="text-[10px] text-slate-300 italic font-bold uppercase ml-2"><i
                                     class="ph-fill ph-crown"></i> Root</span>
