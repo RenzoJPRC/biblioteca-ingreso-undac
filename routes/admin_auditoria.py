@@ -39,6 +39,7 @@ def traducir_accion(accion_raw):
     if 'GUARDAR_EVENTO' in a: return 'Crear Evento'
     
     # === SISTEMA & RBAC ===
+    if 'SEC_BRUTEFORCE' in a: return 'Bloqueo Anti-Fuerza Bruta'
     if 'BACKUP/GENERAR' in a: return 'Exportar Backup .ZIP'
     if 'ACCESOS/CREAR' in a: return 'Crear Gestor RBAC'
     if 'ACCESOS/ELIMINAR' in a: return 'Eliminar Gestor RBAC'
@@ -61,7 +62,7 @@ def parsear_detalle(detalle_str):
                     items.append(f"{k}: {v}")
             return " ➔ ".join(items) if items else "Sin metadatos relevantes"
         return detalle_str
-    except:
+    except Exception as e:
         return detalle_str
 
 @admin_auditoria_bp.route('/')

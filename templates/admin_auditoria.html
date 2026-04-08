@@ -85,7 +85,8 @@
                             <td class="p-4 font-medium text-slate-700 capitalize">{{ log[1] }}</td>
                             <td class="p-4">
                                 <span class="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest
-                                            {% if 'Eliminar' in log[2] or 'Borrar' in log[2] or 'Vaciar' in log[2] %}bg-rose-100 text-rose-700
+                                            {% if 'Bloqueo' in log[2] %}bg-rose-600 text-white shadow-lg shadow-rose-500/30 border border-rose-500
+                                            {% elif 'Eliminar' in log[2] or 'Borrar' in log[2] or 'Vaciar' in log[2] %}bg-rose-100 text-rose-700
                                             {% elif 'Importar' in log[2] or 'Crear' in log[2] %}bg-emerald-100 text-emerald-700
                                             {% elif 'Alterar' in log[2] or 'Editar' in log[2] %}bg-amber-100 text-amber-700
                                             {% else %}bg-indigo-100 text-indigo-700{% endif %}">
