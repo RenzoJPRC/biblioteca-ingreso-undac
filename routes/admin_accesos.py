@@ -1,8 +1,10 @@
 from flask import Blueprint, render_template, request, session, redirect, url_for, flash
-import pyodbc
 from werkzeug.security import generate_password_hash, check_password_hash
-from db import get_db_connection
 from utils.cache_manager import global_cache
+from utils.queries_accesos import (
+    get_all_usuarios, db_crear_usuario, db_eliminar_usuario,
+    check_admin_auth, db_actualizar_gestor
+)
 
 admin_accesos_bp = Blueprint('admin_accesos', __name__, url_prefix='/admin/accesos')
 
@@ -16,15 +18,10 @@ def index():
     usuarios = global_cache.get('usuarios_sistema')
     
     if usuarios is None:
-        conn = get_db_connection()
-        if not conn:
+        usuarios = get_all_usuarios()
+        if usuarios is None:
             flash('Error de BD', 'error')
             return redirect(url_for('admin_dashboard.admin_dashboard'))
-            
-        cursor = conn.cursor()
-        cursor.execute("SELECT UsuarioID, Usuario, Email, Rol, SedeAsignada, Activo, FORMAT(CreadoEn, 'dd/MM/yyyy') FROM UsuariosSistema")
-        usuarios = cursor.fetchall()
-        conn.close()
         
         # Guardar en caché LRU por 60 segundos
         global_cache.set('usuarios_sistema', usuarios)
@@ -48,30 +45,12 @@ def crear():
     hash_pw = generate_password_hash(password)
     email_generado = f"{usuario}@undac.edu.pe"
     
-    conn = get_db_connection()
-    if not conn: return redirect(url_for('admin_accesos.index'))
-    try:
-        cursor = conn.cursor()
-        # Check if exists
-        cursor.execute("SELECT 1 FROM UsuariosSistema WHERE Usuario = ?", (usuario,))
-        if cursor.fetchone():
-            flash(f'El usuario {usuario} ya existe.', 'error')
-            return redirect(url_for('admin_accesos.index'))
-            
-        cursor.execute('''
-            INSERT INTO UsuariosSistema (Usuario, PasswordHash, Email, Rol, Activo, SedeAsignada)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (usuario, hash_pw, email_generado, rol, 1, sede))
-        conn.commit()
-        flash(f'Usuario {usuario} creado con éxito.', 'success')
-        
-        # Invalidar caché para forzar recarga la próxima vez
+    ok, msg = db_crear_usuario(usuario, email_generado, hash_pw, rol, sede)
+    if ok:
         global_cache.clear('usuarios_sistema')
-        
-    except Exception as e:
-        flash(f'Error al crear usuario: {e}', 'error')
-    finally:
-        conn.close()
+        flash(f'Usuario {usuario} creado con éxito.', 'success')
+    else:
+        flash(f'Error al crear usuario: {msg}', 'error')
         
     return redirect(url_for('admin_accesos.index'))
 
@@ -94,52 +73,37 @@ def editar():
         flash('Faltan credenciales de verificación para editar el perfil.', 'error')
         return redirect(url_for('admin_accesos.index'))
 
-    conn = get_db_connection()
-    if not conn: return redirect(url_for('admin_accesos.index'))
+    # 1. Validar contraseña admin actual
+    admin_data = check_admin_auth(admin_username)
+    if not admin_data or not check_password_hash(admin_data[0], password_admin):
+        flash('La contraseña actual es incorrecta. Operación abortada por seguridad.', 'error')
+        return redirect(url_for('admin_accesos.index'))
 
-    try:
-        cursor = conn.cursor()
+    # 2. Proceder con la actualización
+    updates = []
+    params = []
+    
+    if nuevo_usuario:
+        updates.append("Usuario = ?")
+        params.append(nuevo_usuario)
         
-        # 1. Verificar la identidad del SuperAdmin que está ejecutando la acción
-        cursor.execute("SELECT PasswordHash FROM UsuariosSistema WHERE Usuario = ?", (admin_username,))
-        row_admin = cursor.fetchone()
+    if nuevo_correo:
+        updates.append("Email = ?")
+        params.append(nuevo_correo)
         
-        if not row_admin or not check_password_hash(row_admin[0], password_admin):
-            flash('La contraseña actual es incorrecta. Operación abortada por seguridad.', 'error')
-            return redirect(url_for('admin_accesos.index'))
-
-        # 2. Proceder con la actualización si los campos no están vacíos
-        updates = []
-        params = []
+    if nueva_password:
+        updates.append("PasswordHash = ?")
+        params.append(generate_password_hash(nueva_password))
         
-        if nuevo_usuario:
-            updates.append("Usuario = ?")
-            params.append(nuevo_usuario)
-            
-        if nuevo_correo:
-            updates.append("Email = ?")
-            params.append(nuevo_correo)
-            
-        if nueva_password:
-            updates.append("PasswordHash = ?")
-            params.append(generate_password_hash(nueva_password))
-            
-        if updates:
-            sql = f"UPDATE UsuariosSistema SET {', '.join(updates)} WHERE UsuarioID = ?"
-            params.append(id_usuario_target)
-            
-            cursor.execute(sql, tuple(params))
-            conn.commit()
-            
+    if updates:
+        ok, msg = db_actualizar_gestor(id_usuario_target, updates, params)
+        if ok:
             global_cache.clear('usuarios_sistema')
             flash('Gestor actualizado con éxito.', 'success')
         else:
-            flash('No detectamos ningún cambio para aplicar.', 'warning')
-
-    except Exception as e:
-        flash(f'Error de sistema al editar: {e}', 'error')
-    finally:
-        conn.close()
+            flash(f'Error de sistema al editar: {msg}', 'error')
+    else:
+        flash('No detectamos ningún cambio para aplicar.', 'warning')
 
     return redirect(url_for('admin_accesos.index'))
 
@@ -148,20 +112,11 @@ def eliminar(id):
     if session.get('admin_rol') != 'SuperAdmin':
         return redirect(url_for('admin_dashboard.admin_dashboard'))
         
-    conn = get_db_connection()
-    if not conn: return redirect(url_for('admin_accesos.index'))
-    try:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM UsuariosSistema WHERE UsuarioID = ? AND Usuario != 'admin'", (id,))
-        conn.commit()
-        flash('Usuario eliminado.', 'success')
-        
-        # Invalidar caché
+    ok, msg = db_eliminar_usuario(id)
+    if ok:
         global_cache.clear('usuarios_sistema')
-        
-    except Exception as e:
-        flash(f'Error al eliminar: {e}', 'error')
-    finally:
-        conn.close()
+        flash('Usuario eliminado.', 'success')
+    else:
+        flash(f'Error al eliminar: {msg}', 'error')
         
     return redirect(url_for('admin_accesos.index'))

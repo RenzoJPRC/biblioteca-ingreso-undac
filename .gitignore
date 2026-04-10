@@ -8,4 +8,4 @@ venv/
 .idea/
 .vscode/
 
-temp_analysis/
+temp_db_analysis/
