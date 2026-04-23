@@ -17,12 +17,19 @@ echo El servidor WSGI Waitress esta arrancando, esto permitira cientos de lectur
 echo simultaneas sin colgarse. Puedes minimizar esta ventana pero NO LA CIERRES.
 echo.
 
-:: 1. Entrar a la carpeta exacta (usando comillas por los espacios)
-:: Usamos %%~dp0 para que detecte la ruta originaria (Mejor que hardcodear C:\Archivos de Programa)
+:: 1. Entrar a la carpeta exacta
+:: Usamos %%~dp0 para que detecte la ruta originaria auto-dinamica
 cd /d "%~dp0"
 
-:: 2. Ejecutar el servidor (veo que se llama app.py)
+:: 2. Ejecutar el servidor en esta misma ventana
+:: (OJO: No usar "start cmd /k" porque abriria doble ventana y seria dificil de apagar luego)
 python app.py
 
-:: Si la ventana se cierra es porque hay un error, el pause lo mantendra abierto para que lo veas
+:: 3. Esperar unos segundos para que levante (Ejemplo comentado)
+:: timeout /t 3 >nul
+
+:: 4. Abrir navegador automaticamente hacia la IP de red de la PC (Ejemplo de Produccion)
+:: start http://172.16.3.15:5000
+
+:: Si la ventana se cierra es porque hay un error critico, el pause lo mantendra abierto
 pause

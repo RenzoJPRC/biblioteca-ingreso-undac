@@ -68,12 +68,20 @@
             <h2 class="text-6xl font-light text-slate-200 mb-4 tracking-tight">Bienvenido</h2>
             <p class="text-slate-500 text-xl font-light">Acerque su carnet al lector para ingresar</p>
 
-            <div class="mt-12 animate-bounce flex justify-center">
+            <div class="mt-8 animate-bounce flex justify-center">
                 <svg class="w-16 h-16 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                     xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
                 </svg>
+            </div>
+
+            <!-- CAJA DE TEXTO VISIBLE (TEMPORAL MIENTRAS LLEGA HARDWARE) -->
+            <div class="mt-6 flex flex-col items-center justify-center space-y-2">
+                <input type="text" id="input-lector" placeholder="Escriba su Código o DNI"
+                    class="w-96 bg-slate-900 border-2 border-slate-700/50 rounded-2xl px-6 py-4 text-center text-3xl font-mono text-emerald-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all shadow-xl placeholder-slate-600 tracking-widest placeholder:tracking-normal placeholder:text-xl"
+                    autocomplete="off" autofocus>
+                <p class="text-slate-600 text-sm italic">Presiona ENTER para ingresar</p>
             </div>
         </div>
 
@@ -98,8 +106,7 @@
 
     </div>
 
-    <input type="text" id="input-lector" class="opacity-0 absolute -z-10" autocomplete="off">
-
+    <!-- (Se movió el input-lector al área de Pantalla Espera de arriba) -->
     <script>
         const input = document.getElementById('input-lector');
         const isEventoStr = "{{ evento_id | default('') }}";
