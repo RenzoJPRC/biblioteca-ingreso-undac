@@ -105,8 +105,12 @@ if __name__ == '__main__':
     import os
     port = int(os.environ.get('PORT', 5000))
     print(f"[*] Iniciando Servidor WSGI Waitress en el puerto {port} con 6 hilos concurrentes...")
-    print(f"[*] Accede al sistema en la red: http://<172.16.3.15>:{port} (IP Producción Biblioteca)")
+    print(f"[*] Accede al sistema en la red: http://172.16.3.15:{port} (IP Producción Biblioteca)")
     print("[*] (Despliegue Multi-Threading para soportar escaneos en paralelo sin cuellos de botella)")
+    import threading
+    import webbrowser
+    threading.Timer(1.5, lambda: webbrowser.open(f'http://172.16.3.15:{port}')).start()
+    
     from waitress import serve
     # Nota Arquitectónica: Usar host='0.0.0.0' para escuchar en la IP de red automática. 
     # NO poner host='172.16.3.15' aquí porque si el módem cambia la IP, el sistema se caerá.
