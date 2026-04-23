@@ -141,10 +141,19 @@
                         <span class="block text-xs font-bold text-slate-400 mb-0.5">{{ reg[5] }}</span>
                         <span class="font-mono text-[13px]">{{ reg[2] }}</span>
                     </td>
-                    <td class="px-6 py-3 font-medium">{{ reg[0] }} {% if reg[4] == 'Visitante' %}<span
-                            class="text-[10px] bg-orange-100 text-orange-700 px-1 rounded ml-1">EXT</span>{% endif %}
+                    <td class="px-6 py-3 font-medium">{{ reg[0] }}
+                        {% if reg[4] == 'Visitante' %}<span
+                            class="text-[10px] bg-orange-100 text-orange-700 font-bold px-1 rounded ml-1">EXT</span>{%
+                        endif %}
                         {% if reg[4] == 'Administrativo' %}<span
-                            class="text-[10px] bg-purple-100 text-purple-700 px-1 rounded ml-1">ADM</span>{% endif %}
+                            class="text-[10px] bg-purple-100 text-purple-700 font-bold px-1 rounded ml-1">ADM</span>{%
+                        endif %}
+                        {% if reg[4] == 'Alumno' %}<span
+                            class="text-[10px] bg-sky-100 text-sky-700 font-bold px-1 rounded ml-1">ALU</span>{% endif
+                        %}
+                        {% if reg[4] == 'Egresado' %}<span
+                            class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-1 rounded ml-1">EGR</span>{%
+                        endif %}
                     </td>
                     <td class="px-6 py-3 text-slate-500">{{ reg[3] }}</td>
                     <td class="px-6 py-3 text-center font-medium text-slate-600">

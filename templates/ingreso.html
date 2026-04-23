@@ -298,7 +298,11 @@
                 escuelaTxt = data.escuela;
             } else if (data.semestre === 'ADMINISTRATIVO') {
                 escuelaTxt = "Oficina No Asignada";
-            } else if (data.semestre && data.semestre !== 'VISITANTE') {
+            } else if (data.semestre === 'VISITANTE') {
+                escuelaTxt = "Externo";
+            } else if (data.semestre === 'EGRESADO') {
+                escuelaTxt = "Sin Escuela";
+            } else {
                 escuelaTxt = "Escuela No Registrada";
             }
 

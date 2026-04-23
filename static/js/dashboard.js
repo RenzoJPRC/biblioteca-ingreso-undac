@@ -115,9 +115,13 @@ function inicializarAutoRefresh(isToday) {
                     data.ultimos.forEach(reg => {
                         let pillHTML = '';
                         if (reg.tipo === 'Visitante') {
-                            pillHTML = '<span class="text-[10px] bg-orange-100 text-orange-700 px-1 rounded ml-1">EXT</span>';
+                            pillHTML = '<span class="text-[10px] bg-orange-100 text-orange-700 font-bold px-1 rounded ml-1">EXT</span>';
                         } else if (reg.tipo === 'Administrativo') {
-                            pillHTML = '<span class="text-[10px] bg-purple-100 text-purple-700 px-1 rounded ml-1">ADM</span>';
+                            pillHTML = '<span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-1 rounded ml-1">ADM</span>';
+                        } else if (reg.tipo === 'Alumno') {
+                            pillHTML = '<span class="text-[10px] bg-sky-100 text-sky-700 font-bold px-1 rounded ml-1">ALU</span>';
+                        } else if (reg.tipo === 'Egresado') {
+                            pillHTML = '<span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-1 rounded ml-1">EGR</span>';
                         }
 
                         let sedeStr = reg.sede || 'Central';

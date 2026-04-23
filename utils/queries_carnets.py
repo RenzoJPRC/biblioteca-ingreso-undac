@@ -255,6 +255,16 @@ def procesar_excel_alumnos_async(file_bytes, task_id):
             if codigo.endswith('.0'): codigo = codigo[:-2]
             
             escuela = str(row.get('ESCUELA PROFESIONAL', row.get('ESCUELA', ''))).strip()
+            
+            facultad = str(row.get('FACULTAD', '')).strip()
+            if facultad.lower() in ('nan', 'null', 'none', '0'): facultad = ''
+            
+            correo_inst = str(row.get('CORREO INSTITUCIONAL', '')).strip()
+            if correo_inst.lower() in ('nan', 'null', 'none', '0'): correo_inst = ''
+            
+            correo_per = str(row.get('CORREO PERSONAL', '')).strip()
+            if correo_per.lower() in ('nan', 'null', 'none', '0'): correo_per = ''
+
             semestre = str(row.get('SEMESTRE', '')).strip()
             if semestre.endswith('.0'): semestre = semestre[:-2]
             
@@ -275,6 +285,23 @@ def procesar_excel_alumnos_async(file_bytes, task_id):
                 skip_row = True
                 
             if not skip_row:
+                # ----------------- INICIO RESOLUCIÓN RELACIONAL -----------------
+                escuela_id = None
+                semestre_id = None
+                
+                if escuela:
+                    # Intenta encontrar coincidencias flexibles con Escuelas
+                    cursor.execute("SELECT TOP 1 EscuelaID FROM Escuelas WHERE NombreEscuela LIKE ?", ('%' + escuela[:15] + '%',))
+                    row_escuela = cursor.fetchone()
+                    if row_escuela: escuela_id = row_escuela[0]
+                    
+                if semestre:
+                    # Intenta encontrar coincidencias exactas del numero de semestre
+                    cursor.execute("SELECT TOP 1 SemestreID FROM Semestres WHERE NombreSemestre = ?", (semestre,))
+                    row_semestre = cursor.fetchone()
+                    if row_semestre: semestre_id = row_semestre[0]
+                # ----------------- FIN RESOLUCIÓN RELACIONAL -----------------
+
                 # Buscar por código primero
                 cursor.execute("SELECT AlumnoID FROM Alumnos WHERE CodigoMatricula = ? AND CodigoMatricula != ''", (codigo,))
                 existe = cursor.fetchone()
@@ -285,11 +312,11 @@ def procesar_excel_alumnos_async(file_bytes, task_id):
                     existe = cursor.fetchone()
 
                 if existe:
-                    cursor.execute("UPDATE Alumnos SET NombreCompleto=?, CodigoMatricula=?, Escuela=?, Semestre=?, Estado=1 WHERE AlumnoID=?", 
-                                   (nombre, codigo, escuela, semestre, existe[0]))
+                    cursor.execute("UPDATE Alumnos SET NombreCompleto=?, CodigoMatricula=?, CorreoInstitucional=?, CorreoPersonal=?, Escuela=?, Facultad=?, Semestre=?, Estado=1, EscuelaID=?, SemestreID=? WHERE AlumnoID=?", 
+                                   (nombre, codigo, correo_inst, correo_per, escuela, facultad, semestre, escuela_id, semestre_id, existe[0]))
                 else:
-                    cursor.execute("INSERT INTO Alumnos (NombreCompleto, DNI, CodigoMatricula, Escuela, Semestre, Estado) VALUES (?,?,?,?,?,1)", 
-                                   (nombre, dni, codigo, escuela, semestre))
+                    cursor.execute("INSERT INTO Alumnos (NombreCompleto, DNI, CodigoMatricula, CorreoInstitucional, CorreoPersonal, Escuela, Facultad, Semestre, Estado, EscuelaID, SemestreID) VALUES (?,?,?,?,?,?,?,?,1,?,?)", 
+                                   (nombre, dni, codigo, correo_inst, correo_per, escuela, facultad, semestre, escuela_id, semestre_id))
                 contador += 1
                 
                 if contador % 500 == 0:
