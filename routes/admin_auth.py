@@ -33,31 +33,50 @@ def login():
             flash('Por favor ingrese usuario y contraseña.', 'error')
             return render_template('admin_login.html')
 
-        conn = get_db_connection()
-        if not conn:
-            flash('Error de conexión a la base de datos.', 'error')
-            return render_template('admin_login.html')
+        try:
+            conn = get_db_connection()
+            if not conn:
+                flash('Error de conexión a la base de datos.', 'error')
+                return render_template('admin_login.html')
 
-        cursor = conn.cursor()
-        cursor.execute("SELECT Usuario, PasswordHash, Rol, Activo, SedeAsignada FROM UsuariosSistema WHERE Usuario = ?", (usuario,))
-        row = cursor.fetchone()
-        conn.close()
+            cursor = conn.cursor()
+            cursor.execute("SELECT Usuario, PasswordHash, Rol, Activo, SedeAsignada FROM UsuariosSistema WHERE Usuario = ?", (usuario,))
+            row = cursor.fetchone()
+            conn.close()
 
-        if row and check_password_hash(row.PasswordHash, password):
-            if not row.Activo:
-                flash('Esta cuenta está desactivada.', 'error')
+            if row:
+                hash_guardado = row.PasswordHash
+                es_valido = False
+                
+                # Soportar contraseñas antiguas sin encriptar (ej. biblio -> '12345')
+                if not hash_guardado.startswith('scrypt:') and not hash_guardado.startswith('pbkdf2:'):
+                    es_valido = (hash_guardado == password)
+                else:
+                    es_valido = check_password_hash(hash_guardado, password)
+
+                if es_valido:
+                    if not row.Activo:
+                        flash('Esta cuenta está desactivada.', 'error')
+                    else:
+                        # Login Correcto
+                        login_attempts.pop(client_ip, None)
+                        session['admin_user'] = row.Usuario
+                        session['admin_rol'] = row.Rol
+                        session['admin_sede'] = row.SedeAsignada or 'Central'
+                        return redirect(url_for('admin_dashboard.admin_dashboard'))
+                else:
+                    # Contraseña incorrecta
+                    login_attempts[client_ip] = estado_ip
+                    login_attempts[client_ip]['count'] += 1
             else:
-                # Login Correcto, purgar intentos
-                login_attempts.pop(client_ip, None)
-                    
-                session['admin_user'] = row.Usuario
-                session['admin_rol'] = row.Rol
-                session['admin_sede'] = row.SedeAsignada or 'Central'
-                return redirect(url_for('admin_dashboard.admin_dashboard'))
-        else:
-            # Login Incorrecto
-            login_attempts[client_ip] = estado_ip
-            login_attempts[client_ip]['count'] += 1
+                # Usuario no encontrado
+                login_attempts[client_ip] = estado_ip
+                login_attempts[client_ip]['count'] += 1
+
+        except Exception as e:
+            # INTERCEPTOR DE ERRORES (Evita el pantallazo 500 en Producción)
+            flash(f"Error técnico interno: {str(e)}", "error")
+            return render_template('admin_login.html')
             
             if login_attempts[client_ip]['count'] >= MAX_INTENTOS:
                 login_attempts[client_ip]['locked_until'] = int(time.time()) + BLOQUEO_SEGUNDOS
