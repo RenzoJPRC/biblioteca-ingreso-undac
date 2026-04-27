@@ -107,9 +107,9 @@ if __name__ == '__main__':
     print(f"[*] Iniciando Servidor WSGI Waitress en el puerto {port} con 6 hilos concurrentes...")
     print(f"[*] Accede al sistema aquí: http://127.0.0.1:{port}")
     # Nota para Biblioteca: Para mostrar la IP correcta alla, pueden cambiar el print de arriba por:
-    # print(f"[*] Accede al sistema en la red: http://<172.16.3.15>:{port}")
+    # print(f"[*] Accede al sistema en la red: http://<IP_BIBLIOTECA>:{port}")
     print("[*] (Despliegue Multi-Threading para soportar escaneos en paralelo sin cuellos de botella)")
     from waitress import serve
     # Nota Arquitectónica: Usar host='0.0.0.0' para escuchar en la IP de red automática. 
-    # NO poner host='172.16.3.15' aquí porque si el módem cambia la IP, el sistema se caerá.
+    # NO poner la IP manual estricta aquí porque si el módem cambia la IP, el sistema se caerá.
     serve(app, host='0.0.0.0', port=port, threads=6)
