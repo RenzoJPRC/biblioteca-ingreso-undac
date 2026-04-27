@@ -98,6 +98,11 @@
                     <i class="ph ph-eye text-lg"></i>
                     <span class="text-sm font-medium">Visor Auditoría</span>
                 </a>
+                <a href="/admin/salas"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {% if request.path == '/admin/salas' %} bg-sky-600 text-white shadow-lg shadow-sky-900/20 {% else %} text-slate-400 hover:text-white hover:bg-slate-800 {% endif %}">
+                    <i class="ph ph-monitor text-lg"></i>
+                    <span class="text-sm font-medium">Gestor de Salas</span>
+                </a>
                 <hr class="border-slate-800 my-2">
                 <a href="/admin/backup"
                     class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {% if request.path == '/admin/backup' %} bg-orange-600 text-white shadow-lg shadow-orange-900/20 {% else %} text-slate-400 hover:text-white hover:bg-slate-800 {% endif %}">

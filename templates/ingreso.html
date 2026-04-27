@@ -47,12 +47,10 @@
         </div>
 
         <span class="text-emerald-400 font-mono text-lg font-bold uppercase tracking-widest drop-shadow-md">
-            {% if sede == 'Central' and piso != 'EVENTO' %}
-                Terminal Piso {{ piso }}
-            {% elif piso == 'EVENTO' %}
-                Terminal Evento
+            {% if piso == 'EVENTO' %}
+            Terminal Evento
             {% else %}
-                Terminal {{ sede }}
+            <span class="text-slate-400 text-sm">PISO {{ piso }}</span> • {{ nombre_sala }}
             {% endif %}
         </span>
     </div>
@@ -114,9 +112,9 @@
         const input = document.getElementById('input-lector');
         const isEventoStr = "{{ evento_id | default('') }}";
         const eventoId = isEventoStr ? Number(isEventoStr) : null;
-        const pisoStr = "{{ piso }}";
-        const piso = (pisoStr === "EVENTO" || !pisoStr) ? null : Number(pisoStr);
-        const sede = "{{ sede }}";
+
+        const salaIdStr = "{{ sala_id }}";
+        const salaId = (salaIdStr && salaIdStr !== "None") ? Number(salaIdStr) : 1;
 
         let timer;
 
@@ -229,8 +227,7 @@
             let url = '/procesar_ingreso';
             let bodyData = {
                 codigo: codigo,
-                piso: piso,
-                sede: sede
+                sala_id: salaId
             };
 
             if (eventoId) {

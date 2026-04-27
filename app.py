@@ -17,6 +17,7 @@ from routes.admin_auth import admin_auth_bp
 from routes.admin_accesos import admin_accesos_bp
 from routes.admin_auditoria import admin_auditoria_bp
 from routes.admin_backup import admin_backup_bp
+from routes.admin_salas import admin_salas_bp
 
 app = Flask(__name__)
 app.secret_key = 'undac_biblioteca_secreto_seguro_2026'
@@ -99,6 +100,7 @@ app.register_blueprint(admin_auth_bp)
 app.register_blueprint(admin_accesos_bp)
 app.register_blueprint(admin_auditoria_bp)
 app.register_blueprint(admin_backup_bp)
+app.register_blueprint(admin_salas_bp)
 
 if __name__ == '__main__':
     # Entorno de Producción Multihilo WSGI (Waitress)

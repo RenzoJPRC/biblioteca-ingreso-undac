@@ -10,33 +10,36 @@ ingreso_bp = Blueprint('ingreso', __name__)
 def index():
     return render_template('index.html')
 
-@ingreso_bp.route('/piso1')
-def piso1(): return render_template('ingreso.html', piso=1, sede='Central')
-
-@ingreso_bp.route('/piso2')
-def piso2(): return render_template('ingreso.html', piso=2, sede='Central')
-
-@ingreso_bp.route('/piso3')
-def piso3(): return render_template('ingreso.html', piso=3, sede='Central')
+@ingreso_bp.route('/sala/<int:sala_id>')
+def ingreso_sala(sala_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT NombreSala, Piso, Sede FROM Salas WHERE SalaID = ? AND Activo = 1", (sala_id,))
+    row = cursor.fetchone()
+    conn.close()
+    
+    if not row:
+        return "ERROR: Sala inactiva o no registrada en el sistema. Contacte Administración.", 404
+        
+    return render_template('ingreso.html', sala_id=sala_id, nombre_sala=row.NombreSala, piso=row.Piso, sede=row.Sede)
 
 @ingreso_bp.route('/filial/<sede>')
-def filial(sede): return render_template('ingreso.html', piso=1, sede=sede)
+def filial(sede): return render_template('ingreso.html', sala_id=1, nombre_sala="Principal", piso=1, sede=sede)
 
 # API: PROCESAR EL ESCANEO
 @ingreso_bp.route('/procesar_ingreso', methods=['POST'])
 def procesar_ingreso():
     data = request.json
     codigo = data.get('codigo')
-    piso = data.get('piso')
-    sede = data.get('sede', 'Central')
+    sala_id = data.get('sala_id', 1)
 
     codigo_str = str(codigo).strip()
     
-    # Prevenir inputs basura del escáner (E.g: "-", " - ", "--", "0", vacíos, o muy cortos)
+    # Prevenir inputs basura del escáner
     if not codigo_str or codigo_str in ['0', '0.0'] or codigo_str.replace('-', '').strip() == '' or len(codigo_str) < 4:
         return jsonify({'status': 'error', 'msg': 'Posible Lectura Errónea del Escáner'})
 
-    res = registrar_ingreso_general(codigo_str, piso, sede)
+    res = registrar_ingreso_general(codigo_str, sala_id)
     return jsonify(res)
 
 # --- RUTAS DE EVENTOS ---
