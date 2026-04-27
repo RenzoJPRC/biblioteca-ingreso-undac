@@ -96,49 +96,18 @@
                     <i class="ph-fill ph-buildings text-lg"></i> Accesos Sede Central
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Acordeón de Pisos y Salas -->
-                    <div class="flex flex-col gap-4 w-full md:col-span-2">
-                        {% for piso, salas in salas_agrupadas.get('Central', {}).items() %}
-                        <div class="w-full">
-                            <!-- Botón del Piso (Cabecera del Acordeón) -->
-                            <button onclick="toggleSalasPiso('piso-{{ piso }}')"
-                                class="w-full group flex items-center justify-between p-4 bg-white border border-sky-200 rounded-xl hover:bg-sky-600 hover:text-white hover:border-sky-600 transition-all duration-300 shadow-sm relative z-20">
-                                <div class="flex items-center gap-3">
-                                    <span
-                                        class="w-8 h-8 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center font-bold text-sm group-hover:bg-white/20 group-hover:text-white transition-colors">{{
-                                        piso }}</span>
-                                    <span class="font-bold text-lg text-slate-700 group-hover:text-white">Piso {{ piso
-                                        }}</span>
-                                </div>
-                                <i id="icon-piso-{{ piso }}"
-                                    class="ph-bold ph-caret-down text-slate-300 group-hover:text-white transition-transform duration-300"></i>
-                            </button>
-
-                            <!-- Contenedor Resbaladizo de Salas (Cuerpo) -->
-                            <div id="piso-{{ piso }}-salas"
-                                class="hidden overflow-hidden transition-all duration-300 transform origin-top px-2 pb-2 pt-4 bg-sky-50 border border-t-0 border-sky-100 rounded-b-xl -mt-2 z-10">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    {% for sala in salas %}
-                                    <a href="/sala/{{ sala.SalaID }}"
-                                        class="group/sala flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg hover:border-sky-500 hover:shadow-md transition-all">
-                                        <div class="flex items-center gap-3">
-                                            <i
-                                                class="ph-fill ph-desktop text-sky-400 text-lg group-hover/sala:text-sky-500"></i>
-                                            <span
-                                                class="font-semibold text-slate-600 text-sm group-hover/sala:text-sky-700">{{
-                                                sala.NombreSala }}</span>
-                                        </div>
-                                        <div
-                                            class="px-3 py-1 rounded-full bg-slate-100 text-[10px] font-bold text-slate-400 group-hover/sala:bg-sky-100 group-hover/sala:text-sky-600">
-                                            IR AL SCANNER <i class="ph-bold ph-arrow-right inline-block"></i>
-                                        </div>
-                                    </a>
-                                    {% endfor %}
-                                </div>
-                            </div>
+                    {% for piso in salas_agrupadas.get('Central', {}).keys() | sort %}
+                    <button onclick="toggleMenuPiso('piso-{{ piso }}-menu')"
+                        class="group flex items-center justify-between p-4 bg-white border border-sky-200 rounded-xl hover:bg-sky-600 hover:text-white hover:border-sky-600 transition-all duration-300 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <span
+                                class="w-8 h-8 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center font-bold text-sm group-hover:bg-white/20 group-hover:text-white transition-colors">{{
+                                piso }}</span>
+                            <span class="font-bold text-lg text-slate-700 group-hover:text-white">Piso {{ piso }}</span>
                         </div>
-                        {% endfor %}
-                    </div>
+                        <i class="ph-bold ph-caret-right text-slate-300 group-hover:text-white transition-colors"></i>
+                    </button>
+                    {% endfor %}
 
                     <!-- Botón para ir al sub-menú de Eventos Especiales -->
                     <button onclick="toggleEventosMenu('Central')"
@@ -155,6 +124,36 @@
                 </div>
             </div>
         </div>
+
+        <!-- GENERADOR DE SUB-MENUS INDEPENDIENTES PARA CADA PISO -->
+        {% for piso, salas in salas_agrupadas.get('Central', {}).items() %}
+        <div id="piso-{{ piso }}-menu" class="hidden w-full transition-all duration-300 animate-fade-in-up">
+            <button onclick="volverMenuCentral('piso-{{ piso }}-menu')"
+                class="mb-6 px-4 py-2 bg-white text-sm text-slate-600 hover:text-sky-600 font-bold flex items-center gap-2 transition-all rounded-full shadow-sm hover:shadow-md border border-slate-200 hover:border-sky-300 w-max">
+                <i class="ph-bold ph-arrow-left text-lg"></i> Volver a Sede Central
+            </button>
+            <div class="bg-sky-50/50 p-6 rounded-2xl border border-sky-100 shadow-sm">
+                <h2 class="text-sky-800 font-bold uppercase tracking-wider text-sm flex items-center gap-2 mb-4">
+                    <i class="ph-fill ph-buildings text-lg"></i> Piso {{ piso }}
+                    <span class="ml-2 bg-sky-200 text-sky-800 text-[10px] px-2 py-1 rounded-md">Salas Disponibles</span>
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for sala in salas %}
+                    <a href="/sala/{{ sala.SalaID }}"
+                        class="group flex items-center justify-between p-4 bg-white border border-sky-200 rounded-xl hover:bg-sky-600 hover:border-sky-600 transition-all shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <span
+                                class="w-8 h-8 rounded-full bg-sky-100 text-sky-500 flex items-center justify-center font-bold group-hover:bg-white/20 group-hover:text-white transition-colors"><i
+                                    class="ph-fill ph-desktop"></i></span>
+                            <span class="font-bold text-slate-700 group-hover:text-white">{{ sala.NombreSala }}</span>
+                        </div>
+                        <i class="ph-bold ph-arrow-right text-slate-300 group-hover:text-white"></i>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
 
         <!-- SUB MENU EVENTOS ESPECIALES -->
         <div id="eventos-menu" class="hidden w-full transition-all duration-300 animate-fade-in-up">
@@ -296,19 +295,26 @@
     </style>
 
     <script>
-        function toggleSalasPiso(pisoId) {
-            const container = document.getElementById(pisoId + '-salas');
-            const icon = document.getElementById('icon-' + pisoId);
+        function toggleMenuPiso(menuId) {
+            const centralMenu = document.getElementById('central-menu');
+            const targetMenu = document.getElementById(menuId);
 
-            if (container.classList.contains('hidden')) {
-                container.classList.remove('hidden');
-                container.classList.add('animate-fade-in-up');
-                icon.classList.add('rotate-180');
-            } else {
-                container.classList.add('hidden');
-                container.classList.remove('animate-fade-in-up');
-                icon.classList.remove('rotate-180');
-            }
+            centralMenu.classList.add('hidden');
+            centralMenu.classList.remove('animate-fade-in-up');
+
+            targetMenu.classList.remove('hidden');
+            targetMenu.classList.add('animate-fade-in-up');
+        }
+
+        function volverMenuCentral(menuId) {
+            const centralMenu = document.getElementById('central-menu');
+            const currentMenu = document.getElementById(menuId);
+
+            currentMenu.classList.add('hidden');
+            currentMenu.classList.remove('animate-fade-in-up');
+
+            centralMenu.classList.remove('hidden');
+            centralMenu.classList.add('animate-fade-in-up');
         }
     </script>
     <script src="/static/js/main.js"></script>
