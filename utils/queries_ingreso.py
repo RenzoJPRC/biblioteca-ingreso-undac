@@ -1,6 +1,6 @@
 from db import get_db_connection
 
-def registrar_ingreso_general(codigo, piso, sede):
+def registrar_ingreso_general(codigo, sala_id):
     """
     Ejecuta el stored procedure sp_RegistrarIngreso y retorna el resultado
     en un formato de diccionario que el endpoint espera.
@@ -17,12 +17,12 @@ def registrar_ingreso_general(codigo, piso, sede):
         DECLARE @out_escuela nvarchar(100);
         DECLARE @out_semestre varchar(20);
         
-        -- Ejecutamos el procedimiento y capturamos los datos de salida
-        EXEC sp_RegistrarIngreso ?, ?, ?, @out_msg OUTPUT, @out_nombre OUTPUT, @out_escuela OUTPUT, @out_semestre OUTPUT;
+        -- Ejecutamos el procedimiento enviando Codigo y SalaID
+        EXEC sp_RegistrarIngreso ?, ?, @out_msg OUTPUT, @out_nombre OUTPUT, @out_escuela OUTPUT, @out_semestre OUTPUT;
         
         SELECT @out_msg, @out_nombre, @out_escuela, @out_semestre;
         """
-        cursor.execute(sql, (codigo, piso, sede))
+        cursor.execute(sql, (codigo, sala_id))
         row = cursor.fetchone()
         conn.commit()
         
