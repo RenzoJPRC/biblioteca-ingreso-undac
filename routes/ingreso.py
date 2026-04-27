@@ -8,7 +8,24 @@ ingreso_bp = Blueprint('ingreso', __name__)
 
 @ingreso_bp.route('/')
 def index():
-    return render_template('index.html')
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT SalaID, NombreSala, Piso, Sede FROM Salas WHERE Activo = 1 ORDER BY Sede ASC, Piso ASC, NombreSala ASC")
+    salas_db = cursor.fetchall()
+    conn.close()
+    
+    salas_agrupadas = {}
+    for s in salas_db:
+        if s.Sede not in salas_agrupadas:
+            salas_agrupadas[s.Sede] = {}
+        if s.Piso not in salas_agrupadas[s.Sede]:
+            salas_agrupadas[s.Sede][s.Piso] = []
+        salas_agrupadas[s.Sede][s.Piso].append({
+            'SalaID': s.SalaID,
+            'NombreSala': s.NombreSala
+        })
+        
+    return render_template('index.html', salas_agrupadas=salas_agrupadas)
 
 @ingreso_bp.route('/sala/<int:sala_id>')
 def ingreso_sala(sala_id):
