@@ -128,7 +128,7 @@ function inicializarAutoRefresh(isToday) {
                         let ubicacionHTML = '';
                         if (sedeStr === 'Central') {
                             if (reg.nombre_sala) {
-                                ubicacionHTML = `<span class="text-[10px] bg-sky-100 text-sky-700 font-bold px-2 py-1.5 rounded-md shadow-sm border border-sky-200/50 uppercase">${reg.nombre_sala}</span>`;
+                                ubicacionHTML = `<div class="flex flex-col items-center gap-1"><span class="text-slate-400 font-medium text-xs">Piso ${reg.piso}</span><span class="text-[10px] bg-sky-100 text-sky-700 font-bold px-2 py-1.5 rounded-md shadow-sm border border-sky-200/50 uppercase">${reg.nombre_sala}</span></div>`;
                             } else {
                                 ubicacionHTML = `<span class="text-slate-500 font-medium">Piso ${reg.piso}</span>`;
                             }
