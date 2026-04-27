@@ -7,6 +7,7 @@
     <title>Acceso Biblioteca UNDAC</title>
     <link rel="shortcut icon" href="{{ url_for('static', filename='logo.png') }}" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
+
     <style>
         .fade-in {
             animation: fadeIn 0.4s ease-out forwards;
@@ -30,7 +31,6 @@
     class="bg-slate-950 text-white h-screen flex flex-col items-center justify-center overflow-hidden font-sans select-none relative"
     onclick="focarInput()">
 
-    <!-- GLOW AMBIENTAL -->
     <div id="glow-overlay" class="fixed inset-0 pointer-events-none transition-all duration-700 z-50 bg-transparent">
     </div>
 
@@ -45,13 +45,14 @@
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span class="relative inline-flex rounded-full h-4 w-4 bg-emerald-500"></span>
         </div>
+
         <span class="text-emerald-400 font-mono text-lg font-bold uppercase tracking-widest drop-shadow-md">
             {% if sede == 'Central' and piso != 'EVENTO' %}
-            Terminal Piso {{ piso }}
+                Terminal Piso {{ piso }}
             {% elif piso == 'EVENTO' %}
-            Terminal Evento
+                Terminal Evento
             {% else %}
-            Terminal {{ sede }}
+                Terminal {{ sede }}
             {% endif %}
         </span>
     </div>
@@ -62,25 +63,27 @@
             <div class="mb-10">
                 <svg class="w-16 h-16 mx-auto text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
-                        d="M12 4v1m6 11h2m-6 0h-2v4h-4v-4H8m13-4V7a1 1 0 00-1-1H4a1 1 0 00-1 1v3M4 7h16"></path>
+                        d="M12 4v1m6 11h2m-6 0h-2v4h-4v-4H8m13-4V7a1 1 0 00-1-1H4a1 1 0 00-1 1v3M4 7h16">
+                    </path>
                 </svg>
             </div>
+
             <h2 class="text-6xl font-light text-slate-200 mb-4 tracking-tight">Bienvenido</h2>
             <p class="text-slate-500 text-xl font-light">Acerque su carnet al lector para ingresar</p>
 
             <div class="mt-8 animate-bounce flex justify-center">
-                <svg class="w-16 h-16 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg">
+                <svg class="w-16 h-16 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                        d="M19 14l-7 7m0 0l-7-7m7 7V3">
+                    </path>
                 </svg>
             </div>
 
-            <!-- CAJA DE TEXTO VISIBLE (TEMPORAL MIENTRAS LLEGA HARDWARE) -->
             <div class="mt-6 flex flex-col items-center justify-center space-y-2">
                 <input type="text" id="input-lector" placeholder="Escriba su Código o DNI"
                     class="w-96 bg-slate-900 border-2 border-slate-700/50 rounded-2xl px-6 py-4 text-center text-3xl font-mono text-emerald-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all shadow-xl placeholder-slate-600 tracking-widest placeholder:tracking-normal placeholder:text-xl"
                     autocomplete="off" autofocus>
+
                 <p class="text-slate-600 text-sm italic">Presiona ENTER para ingresar</p>
             </div>
         </div>
@@ -92,12 +95,13 @@
 
             <div id="datos-alumno" class="border-t border-slate-800 pt-6 mt-6 hidden">
                 <h3 id="nombre-alumno" class="text-3xl text-white font-semibold mb-2"></h3>
+
                 <div class="flex justify-center gap-4 text-sky-400 text-xl font-light">
                     <span id="escuela-alumno"></span>
                     <span>&bull;</span>
                     <span id="semestre-alumno"></span>
                 </div>
-                <!-- NUEVO: Mensaje de Advertencia -->
+
                 <div id="mensaje-extra" class="hidden mt-4 text-rose-500 text-3xl font-bold animate-bounce uppercase">
                     ⚠️ Renueva tu Carnet ⚠️
                 </div>
@@ -106,7 +110,6 @@
 
     </div>
 
-    <!-- (Se movió el input-lector al área de Pantalla Espera de arriba) -->
     <script>
         const input = document.getElementById('input-lector');
         const isEventoStr = "{{ evento_id | default('') }}";
@@ -114,20 +117,59 @@
         const pisoStr = "{{ piso }}";
         const piso = (pisoStr === "EVENTO" || !pisoStr) ? null : Number(pisoStr);
         const sede = "{{ sede }}";
+
         let timer;
 
-        // Audio Feedbacks (API NATIVA ZERO-DEPENDENCIES)
+        function focarInput() {
+            if (input) {
+                input.focus();
+            }
+        }
+
+        window.onload = () => {
+            focarInput();
+
+            if (eventoId) {
+                setInterval(verificarExpiracionEvento, 60000);
+            }
+        };
+
+        input.addEventListener('blur', () => {
+            setTimeout(focarInput, 50);
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+
+                const codigo = input.value.trim();
+
+                if (codigo) {
+                    procesar(codigo);
+                }
+
+                input.value = '';
+            }
+        });
+
         function playSuccessBeep() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
                 const oscillator = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
+
                 oscillator.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
+
                 oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // Alta frecuencia, A5
+                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
                 gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+
                 oscillator.start();
                 gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.15);
                 oscillator.stop(audioCtx.currentTime + 0.15);
@@ -137,14 +179,21 @@
         function playErrorBeep() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
                 const oscillator = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
+
                 oscillator.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
+
                 oscillator.type = 'sawtooth';
-                oscillator.frequency.setValueAtTime(150, audioCtx.currentTime); // Baja frecuencia, Buzz
+                oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
                 gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+
                 oscillator.start();
                 gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.3);
                 oscillator.stop(audioCtx.currentTime + 0.3);
@@ -154,55 +203,61 @@
         function playWarningBeep() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const os = audioCtx.createOscillator();
-                const gn = audioCtx.createGain();
-                os.connect(gn); gn.connect(audioCtx.destination);
-                os.type = 'square';
-                os.frequency.setValueAtTime(440, audioCtx.currentTime); // Media frecuencia
-                os.frequency.setValueAtTime(330, audioCtx.currentTime + 0.1); // Baja rápida
-                gn.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                os.start();
-                gn.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.2);
-                os.stop(audioCtx.currentTime + 0.2);
+
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.type = 'square';
+                oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+                oscillator.frequency.setValueAtTime(330, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+
+                oscillator.start();
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.2);
+                oscillator.stop(audioCtx.currentTime + 0.2);
             } catch (e) { }
         }
 
-        function focarInput() { input.focus(); }
-        window.onload = () => {
-            focarInput();
-            // NUEVO: Si estamos en modo "Evento", revisar cada minuto si el evento sigue vivo
-            if (eventoId) {
-                setInterval(verificarExpiracionEvento, 60000); // 60 segundos
-            }
-        };
-        input.addEventListener('blur', () => setTimeout(focarInput, 50));
-
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                const codigo = input.value.trim();
-                if (codigo) procesar(codigo);
-                input.value = '';
-            }
-        });
-
         function procesar(codigo) {
             let url = '/procesar_ingreso';
-            let bodyData = { codigo: codigo, piso: piso, sede: sede };
+            let bodyData = {
+                codigo: codigo,
+                piso: piso,
+                sede: sede
+            };
 
             if (eventoId) {
                 url = '/procesar_evento_ingreso';
-                bodyData = { codigo: codigo, evento_id: eventoId };
+                bodyData = {
+                    codigo: codigo,
+                    evento_id: eventoId
+                };
             }
 
             fetch(url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify(bodyData)
             })
                 .then(res => res.json())
                 .then(data => mostrar(data))
-                .catch(err => console.error(err));
+                .catch(err => {
+                    console.error(err);
+
+                    mostrar({
+                        status: 'error',
+                        msg: 'Error de conexión con el servidor'
+                    });
+                });
         }
 
         function mostrar(data) {
@@ -212,19 +267,14 @@
             const boxDatos = document.getElementById('datos-alumno');
             const icono = document.getElementById('icono-estado');
             const msgExtra = document.getElementById('mensaje-extra');
+            const glow = document.getElementById('glow-overlay');
 
-            // Mostrar pantalla de resultado
             espera.classList.add('hidden');
             resultado.classList.remove('hidden');
             resultado.classList.add('fade-in');
 
-            // Limpiar clases de colores previos
             txtEstado.className = "text-5xl font-bold mb-4";
-            msgExtra.classList.add('hidden'); // Ocultar por defecto
-
-            const glow = document.getElementById('glow-overlay');
-
-            // --- LÓGICA DE VISUALIZACIÓN ---
+            msgExtra.classList.add('hidden');
 
             const esEgresado = data.semestre && data.semestre.toUpperCase() === 'EGRESADO';
             const esVisitante = data.semestre && data.semestre.toUpperCase() === 'VISITANTE';
@@ -232,75 +282,114 @@
 
             if (data.status === 'success') {
                 playSuccessBeep();
-                // VERDE, ORO o NARANJA: Acceso Correcto
+
                 txtEstado.innerText = "Acceso Permitido";
 
                 if (esEgresado) {
                     txtEstado.classList.add("text-cyan-400");
-                    icono.innerHTML = `<svg class="w-32 h-32 text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.6)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    icono.innerHTML = `
+                        <svg class="w-32 h-32 text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.6)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                            </path>
+                        </svg>`;
                     glow.className = "fixed inset-0 pointer-events-none transition-all duration-300 z-50 shadow-[inset_0_0_250px_rgba(34,211,238,0.25)] bg-cyan-500/5";
+
                 } else if (esVisitante) {
                     txtEstado.classList.add("text-orange-400");
-                    icono.innerHTML = `<svg class="w-32 h-32 text-orange-400 drop-shadow-[0_0_15px_rgba(251,146,60,0.6)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    icono.innerHTML = `
+                        <svg class="w-32 h-32 text-orange-400 drop-shadow-[0_0_15px_rgba(251,146,60,0.6)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                            </path>
+                        </svg>`;
                     glow.className = "fixed inset-0 pointer-events-none transition-all duration-300 z-50 shadow-[inset_0_0_250px_rgba(251,146,60,0.25)] bg-orange-500/5";
+
                 } else if (esAdministrativo) {
                     txtEstado.classList.add("text-fuchsia-400");
-                    icono.innerHTML = `<svg class="w-32 h-32 text-fuchsia-400 drop-shadow-[0_0_15px_rgba(232,121,249,0.6)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    icono.innerHTML = `
+                        <svg class="w-32 h-32 text-fuchsia-400 drop-shadow-[0_0_15px_rgba(232,121,249,0.6)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                            </path>
+                        </svg>`;
                     glow.className = "fixed inset-0 pointer-events-none transition-all duration-300 z-50 shadow-[inset_0_0_250px_rgba(232,121,249,0.25)] bg-fuchsia-500/5";
+
                 } else {
                     txtEstado.classList.add("text-emerald-400");
-                    icono.innerHTML = `<svg class="w-32 h-32 text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    icono.innerHTML = `
+                        <svg class="w-32 h-32 text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                            </path>
+                        </svg>`;
                     glow.className = "fixed inset-0 pointer-events-none transition-all duration-300 z-50 shadow-[inset_0_0_250px_rgba(16,185,129,0.25)] bg-emerald-500/5";
                 }
 
-                // Verificar advertencia de carnet
                 if (data.warning === 'carnet_vencido') {
                     msgExtra.classList.remove('hidden');
                 }
 
-                // Mostrar Datos
                 llenarDatos(data);
 
             } else if (data.status === 'warning') {
                 playWarningBeep();
-                // AMARILLO: Ya registrado (PERO MUESTRA DATOS)
-                txtEstado.innerText = data.msg; // "YA REGISTRADO..."
+
+                txtEstado.innerText = data.msg || "Ya registrado";
                 txtEstado.classList.add("text-yellow-400");
-                icono.innerHTML = `<svg class="w-32 h-32 text-yellow-500 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+
+                icono.innerHTML = `
+                    <svg class="w-32 h-32 text-yellow-500 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                        </path>
+                    </svg>`;
+
                 glow.className = "fixed inset-0 pointer-events-none transition-all duration-300 z-50 shadow-[inset_0_0_350px_rgba(234,179,8,0.4)] bg-yellow-500/10";
 
-                // Mostrar Datos (Esto es lo que pediste)
                 llenarDatos(data);
 
             } else {
                 playErrorBeep();
-                // ROJO: Error / No encontrado
+
                 txtEstado.innerText = data.msg || "No Registrado";
                 txtEstado.classList.add("text-rose-500");
-                icono.innerHTML = `<svg class="w-32 h-32 text-rose-500 drop-shadow-[0_0_15px_rgba(244,63,94,0.5)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+
+                icono.innerHTML = `
+                    <svg class="w-32 h-32 text-rose-500 drop-shadow-[0_0_15px_rgba(244,63,94,0.5)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z">
+                        </path>
+                    </svg>`;
+
                 glow.className = "fixed inset-0 pointer-events-none transition-all duration-300 z-50 shadow-[inset_0_0_350px_rgba(244,63,94,0.5)] bg-rose-500/10";
 
-                // Ocultar caja de datos
                 boxDatos.classList.add('hidden');
             }
 
-            // Temporizador para volver
             clearTimeout(timer);
+
             timer = setTimeout(() => {
                 resultado.classList.add('hidden');
                 espera.classList.remove('hidden');
                 resultado.classList.remove('fade-in');
+
                 glow.className = "fixed inset-0 pointer-events-none transition-all duration-700 z-50 bg-transparent";
-            }, 4000); // 4 segundos
+
+                input.value = '';
+                focarInput();
+            }, 4000);
         }
 
         function llenarDatos(data) {
             const boxDatos = document.getElementById('datos-alumno');
+
             boxDatos.classList.remove('hidden');
 
             document.getElementById('nombre-alumno').innerText = data.alumno || "Sin Nombre";
 
             let escuelaTxt = "Externo";
+
             if (data.escuela && data.escuela.trim() !== '') {
                 escuelaTxt = data.escuela;
             } else if (data.semestre === 'ADMINISTRATIVO') {
@@ -316,33 +405,46 @@
             document.getElementById('escuela-alumno').innerText = escuelaTxt;
 
             const sem = document.getElementById('semestre-alumno');
-            if (data.semestre && data.semestre !== 'EXTERNO' && data.semestre !== 'VISITANTE' && data.semestre !== 'EGRESADO' && data.semestre !== 'ADMINISTRATIVO') {
+
+            if (
+                data.semestre &&
+                data.semestre !== 'EXTERNO' &&
+                data.semestre !== 'VISITANTE' &&
+                data.semestre !== 'EGRESADO' &&
+                data.semestre !== 'ADMINISTRATIVO'
+            ) {
                 sem.innerText = "Semestre " + data.semestre;
                 sem.style.display = 'inline';
-            } else if (data.semestre === 'VISITANTE' || data.semestre === 'EGRESADO' || data.semestre === 'ADMINISTRATIVO') {
+
+            } else if (
+                data.semestre === 'VISITANTE' ||
+                data.semestre === 'EGRESADO' ||
+                data.semestre === 'ADMINISTRATIVO'
+            ) {
                 sem.innerText = data.semestre;
                 sem.style.display = 'inline';
+
             } else {
                 sem.style.display = 'none';
             }
         }
-        // NUEVO: Verificador de Supervivencia del Evento ESPECÍFICO
+
         function verificarExpiracionEvento() {
             if (!eventoId) return;
+
             fetch(`/api/evento_estado/${eventoId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success' && data.activo === false) {
-                        // El evento finalizó oficialmente o su hora ya pasó. Volver a inicio.
                         window.location.href = '/';
                     } else if (data.status === 'error') {
-                        // Si el evento fue borrado completamente de la base de datos
                         window.location.href = '/';
                     }
                 })
                 .catch(err => console.error("Error validando vida del evento:", err));
         }
     </script>
+
 </body>
 
 </html>
