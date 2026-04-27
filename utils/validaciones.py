@@ -9,7 +9,7 @@ def verificar_dni_global(dni, ignora_tabla=None, ignora_id=None, cursor=None):
     Retorna (False, None) si el DNI está libre.
     
     Permite ignorar la búsqueda en un registro específico (útil para la edición).
-    - ignora_tabla: 'Alumnos', 'Egresados' o 'Visitantes'
+    - ignora_tabla: 'Alumnos', 'Egresados', 'Visitantes', 'PersonalAdministrativo' o 'Docentes'
     - ignora_id: ID del registro que se está editando
     - cursor: Cursor de BD opcional para reusar transacciones abiertas.
     """
@@ -48,14 +48,23 @@ def verificar_dni_global(dni, ignora_tabla=None, ignora_id=None, cursor=None):
         if cursor.fetchone():
             return True, "Este DNI ya está registrado como Visitante / Externo."
 
-        # 4. Verificar en Personal Administrativo (Permitir si se está registrando Egresado)
-        if ignora_tabla != 'Egresados':
+        # 4. Verificar en Personal Administrativo (Permitir si se está registrando Egresado o Docente)
+        if ignora_tabla not in ['Egresados', 'Docentes']:
             if ignora_tabla == 'PersonalAdministrativo' and ignora_id:
                 cursor.execute("SELECT 1 FROM PersonalAdministrativo WHERE DNI = ? AND PersonalID != ?", (dni, ignora_id))
             else:
                 cursor.execute("SELECT 1 FROM PersonalAdministrativo WHERE DNI = ?", (dni,))
             if cursor.fetchone():
                 return True, "Este DNI ya está registrado como Personal Administrativo."
+
+        # 5. Verificar en Docentes (Permitir si se está registrando Personal, Egresado o Visitante? NO, Docente es exclusivo)
+        if ignora_tabla != 'PersonalAdministrativo': # Si se registra personal, quizas también es docente, pero el usuario pidió bloqueo.
+            if ignora_tabla == 'Docentes' and ignora_id:
+                cursor.execute("SELECT 1 FROM Docentes WHERE DNI = ? AND DocenteID != ?", (dni, ignora_id))
+            else:
+                cursor.execute("SELECT 1 FROM Docentes WHERE DNI = ?", (dni,))
+            if cursor.fetchone():
+                return True, "Este DNI ya está registrado en el área de Docentes."
 
         return False, None
     

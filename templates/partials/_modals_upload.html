@@ -405,3 +405,78 @@
     </div>
 </div>
 <!-- MODAL PERSONAL ADMINISTRATIVO CHUNK END -->
+
+<!-- MODAL DOCENTES CHUNK START -->
+<div id="modal-upload-docente"
+    class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 transform transition-all scale-100">
+
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <i class="ph ph-microsoft-excel-logo text-green-600 text-2xl"></i>
+                Importar Docente Admin.
+            </h3>
+            <button onclick="document.getElementById('modal-upload-docente').classList.add('hidden')"
+                class="text-slate-400 hover:text-red-500">
+                <i class="ph ph-x text-2xl"></i>
+            </button>
+        </div>
+
+        <p class="text-sm text-slate-500 mb-2 leading-relaxed">
+            Sube el archivo Excel con los datos del DOCENTES.
+        </p>
+
+        <div class="bg-purple-50 border border-purple-100 rounded-lg p-3 mb-4">
+            <p class="text-xs font-bold text-purple-800 mb-2 flex items-center gap-1"><i class="ph ph-info"></i> Formato
+                Obligatorio del Excel:</p>
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-max text-left text-[10px] text-slate-600 font-mono">
+                    <thead class="bg-purple-100 text-purple-800 uppercase font-bold border-b border-purple-200">
+                        <tr>
+                            <th class="px-2 py-1 border-r border-purple-200">DNI</th>
+                            <th class="px-2 py-1 border-r border-purple-200 whitespace-nowrap">APELLIDOS Y NOMBRES</th>
+                            <th class="px-2 py-1 border-r border-purple-200">FACULTAD</th>
+                            <th class="px-2 py-1 border-r border-purple-200 whitespace-nowrap">CORREO INSTITUCIONAL</th>
+                            <th class="px-2 py-1 border-r border-purple-200 whitespace-nowrap">CORREO PERSONAL</th>
+                            <th class="px-2 py-1">TELEFONO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="px-2 py-1 border-r border-purple-100">8-digitos</td>
+                            <td class="px-2 py-1 border-r border-purple-100">Texto</td>
+                            <td class="px-2 py-1 border-r border-purple-100">Texto (Opcional)</td>
+                            <td class="px-2 py-1 border-r border-purple-100">Texto (Opcional)</td>
+                            <td class="px-2 py-1 border-r border-purple-100">Texto (Opcional)</td>
+                            <td class="px-2 py-1">Texto (Opcional)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-[9px] text-slate-500 mt-2 italic">La fila 1 debe contener exactamente estos nombres de
+                columna.</p>
+        </div>
+
+        <form id="form-excel-docente" class="space-y-4"
+            onsubmit="event.preventDefault(); manejarEnvioExcel(this, '/admin/subir_excel_docentes', 'upload-status-docente');">
+            <div class="relative group">
+                <input type="file" name="archivo_excel" accept=".xlsx" required
+                    class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer border border-dashed border-slate-300 rounded-lg p-2 group-hover:border-purple-400 transition-colors" />
+            </div>
+
+            <div id="upload-status-docente" class="hidden p-3 rounded-lg text-sm font-medium flex items-center gap-2">
+            </div>
+
+            <div class="pt-2 flex justify-end gap-3 border-t border-slate-100">
+                <button type="button" onclick="document.getElementById('modal-upload-docente').classList.add('hidden')"
+                    class="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-lg font-medium transition-colors">Cancelar</button>
+                <button type="submit"
+                    class="px-6 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold shadow-lg transition-all flex items-center gap-2">
+                    <i class="ph ph-upload-simple text-lg"></i>
+                    Procesar Docente
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- MODAL DOCENTES CHUNK END -->
