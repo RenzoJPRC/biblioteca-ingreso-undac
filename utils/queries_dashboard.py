@@ -52,6 +52,20 @@ def obtener_datos_dashboard(f_inicio, f_fin, sede_filtro=None):
     cursor.execute(f"SELECT Piso, COUNT(*) FROM RegistroIngresos WHERE ISNULL(Sede, 'Central')='Central' AND {date_where_g} GROUP BY Piso", params_g)
     pisos_dict = {row[0]: row[1] for row in cursor.fetchall()}
 
+    # 2.5 Por Salas Físicas (Central)
+    cursor.execute(f"""
+        SELECT S.Piso, S.NombreSala, COUNT(R.RegistroID) 
+        FROM RegistroIngresos R
+        JOIN Salas S ON R.SalaID = S.SalaID
+        WHERE S.Sede = 'Central' AND {date_where_r}
+        GROUP BY S.Piso, S.NombreSala
+    """, params_r)
+    salas_db = cursor.fetchall()
+    salas_dict = {}
+    for piso, nombre_sala, cant in salas_db:
+        if str(piso) not in salas_dict: salas_dict[str(piso)] = {}
+        salas_dict[str(piso)][nombre_sala] = cant
+
     cursor.execute(f"SELECT Sede, COUNT(*) FROM RegistroIngresos WHERE ISNULL(Sede, 'Central')!='Central' AND {date_where_g} GROUP BY Sede", params_g)
     sedes_dict = {row[0]: row[1] for row in cursor.fetchall()}
 
@@ -101,12 +115,14 @@ def obtener_datos_dashboard(f_inicio, f_fin, sede_filtro=None):
                 ELSE 'Alumno' 
             END,
             FORMAT(R.FechaHora, 'dd/MM/yyyy'),
-            ISNULL(R.Sede, 'Central')
+            ISNULL(R.Sede, 'Central'),
+            S.NombreSala
         FROM RegistroIngresos R
         LEFT JOIN Alumnos A ON R.AlumnoID = A.AlumnoID
         LEFT JOIN Visitantes V ON R.VisitanteID = V.VisitanteID
         LEFT JOIN Egresados E ON R.EgresadoID = E.EgresadoID
         LEFT JOIN PersonalAdministrativo P ON R.PersonalID = P.PersonalID
+        LEFT JOIN Salas S ON R.SalaID = S.SalaID
         WHERE {date_where_r}
         ORDER BY R.FechaHora DESC
     """, params_r)
@@ -121,7 +137,8 @@ def obtener_datos_dashboard(f_inicio, f_fin, sede_filtro=None):
             'origen': row[3],
             'tipo': row[4],
             'fecha': row[5],
-            'sede': row[6]
+            'sede': row[6],
+            'nombre_sala': row[7]
         })
         
     conn.close()
@@ -133,6 +150,7 @@ def obtener_datos_dashboard(f_inicio, f_fin, sede_filtro=None):
         'total_egresados': total_egresados,
         'total_personal': total_personal,
         'pisos': pisos_dict,
+        'salas': salas_dict,
         'sedes': sedes_dict,
         'chart_horas_labels': chart_horas_labels,
         'chart_horas_values': chart_horas_values,

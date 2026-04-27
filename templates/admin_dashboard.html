@@ -58,15 +58,52 @@
                     total_personal }} Trabajadores</span>
             </div>
         </div>
+        <!-- Pestañas de Afluencia Multi-Sala (Drill-Down) -->
         {% if session.get('admin_rol') == 'SuperAdmin' or session.get('admin_sede') == 'Central' %}
-        {% for i in range(1, 4) %}
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
-            <div>
-                <p class="text-xs font-bold text-slate-400 uppercase">Piso {{ i }}</p>
-                <h3 class="text-2xl font-bold text-slate-700">{{ pisos.get(i, 0) | default(0) }}</h3>
+        <div class="col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+            <div class="px-5 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="text-xs font-bold text-slate-700 uppercase flex items-center gap-1.5"><i
+                        class="ph-fill ph-buildings text-lg text-sky-500"></i> Afluencia por Pisos y Salas</h3>
+            </div>
+
+            <div class="p-5 flex-1 flex flex-col">
+                <div class="flex gap-2 mb-4 border-b border-slate-100 pb-2">
+                    {% for i in range(1, 4) %}
+                    <button onclick="mostrarPisoDash('Piso{{ i }}', this)"
+                        class="tab-piso-btn {% if loop.first %}active text-sky-600 border-b-2 border-sky-600{% else %}text-slate-400 hover:text-slate-600{% endif %} px-4 py-1.5 text-sm font-bold uppercase transition-all">
+                        Piso {{ i }} <span
+                            class="bg-slate-100 text-slate-500 text-[10px] px-1.5 rounded-full ml-1 font-mono">{{
+                            pisos.get(i, 0) | default(0) }}</span>
+                    </button>
+                    {% endfor %}
+                </div>
+
+                <div class="flex-1 relative pb-2">
+                    {% for i in range(1, 4) %}
+                    <div id="dashPiso{{ i }}-content"
+                        class="tab-piso-content {% if not loop.first %}hidden{% endif %} animate-fade-in-up w-full h-full">
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            {% set salas_del_piso = salas.get(i|string, {}) %}
+                            {% if salas_del_piso %}
+                            {% for nombre, cant in salas_del_piso.items() %}
+                            <div
+                                class="bg-sky-50/40 p-3 rounded-lg border border-sky-100 flex flex-col justify-between">
+                                <p class="text-[10px] font-bold text-sky-600 uppercase mb-1 leading-tight">{{ nombre }}
+                                </p>
+                                <h3 class="text-2xl font-black text-slate-700">{{ cant }}</h3>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div class="col-span-full py-2 text-center text-slate-400">
+                                <p class="text-xs">No hay actividad registrada en Salas de este piso.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
-        {% endfor %}
         {% endif %}
     </div>
 
@@ -158,7 +195,13 @@
                     <td class="px-6 py-3 text-slate-500">{{ reg[3] }}</td>
                     <td class="px-6 py-3 text-center font-medium text-slate-600">
                         {% if reg[6] == 'Central' or not reg[6] %}
-                        Piso {{ reg[1] }}
+                        {% if reg[7] %}
+                        <span
+                            class="text-[10px] bg-sky-100 text-sky-700 font-bold px-2 py-1.5 rounded-md shadow-sm border border-sky-200/50 uppercase">{{
+                            reg[7] }}</span>
+                        {% else %}
+                        <span class="text-slate-500 font-medium">Piso {{ reg[1] }}</span>
+                        {% endif %}
                         {% else %}
                         <span
                             class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded truncate inline-block max-w-[100px] uppercase">{{
@@ -195,5 +238,17 @@
     const isToday = "{{ 'true' if not params_inicio and not params_fin else 'false' }}";
     inicializarAutoRefresh(isToday);
     });
+
+    function mostrarPisoDash(pisoId, btnEl) {
+        document.querySelectorAll('.tab-piso-content').forEach(el => el.classList.add('hidden'));
+        document.getElementById('dash' + pisoId + '-content').classList.remove('hidden');
+
+        document.querySelectorAll('.tab-piso-btn').forEach(btn => {
+            btn.classList.remove('active', 'text-sky-600', 'border-b-2', 'border-sky-600');
+            btn.classList.add('text-slate-400');
+        });
+        btnEl.classList.remove('text-slate-400');
+        btnEl.classList.add('active', 'text-sky-600', 'border-b-2', 'border-sky-600');
+    }
 </script>
 {% endblock %}
