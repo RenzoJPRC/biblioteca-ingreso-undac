@@ -154,7 +154,7 @@ def procesar_excel_personal_async(file_bytes, task_id):
             c_inst = str(row.get('CORREO INSTITUCIONAL', '')).strip()
             c_per = str(row.get('CORREO PERSONAL', row.get('CORREO', ''))).strip()
             
-            telefono = str(row.get('TELÉFONO', row.get('TELEFONO', row.get('CELULAR', '')))).strip()
+            telefono = str(row.get('NUMERO DE CELULAR', row.get('NÚMERO DE CELULAR', row.get('TELÉFONO', row.get('TELEFONO', row.get('CELULAR', '')))))).strip()
             if telefono.endswith('.0'): telefono = telefono[:-2]
             
             if not nombre: 
