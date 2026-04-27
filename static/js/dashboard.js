@@ -127,7 +127,11 @@ function inicializarAutoRefresh(isToday) {
                         let sedeStr = reg.sede || 'Central';
                         let ubicacionHTML = '';
                         if (sedeStr === 'Central') {
-                            ubicacionHTML = `Piso ${reg.piso}`;
+                            if (reg.nombre_sala) {
+                                ubicacionHTML = `<span class="text-[10px] bg-sky-100 text-sky-700 font-bold px-2 py-1.5 rounded-md shadow-sm border border-sky-200/50 uppercase">${reg.nombre_sala}</span>`;
+                            } else {
+                                ubicacionHTML = `<span class="text-slate-500 font-medium">Piso ${reg.piso}</span>`;
+                            }
                         } else {
                             ubicacionHTML = `<span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded truncate inline-block max-w-[100px] uppercase">${sedeStr}</span>`;
                         }
