@@ -17,14 +17,6 @@ def login():
     if 'admin_user' in session:
         return redirect(url_for('admin_dashboard.admin_dashboard'))
         
-    client_ip = request.remote_addr or '0.0.0.0'
-    estado_ip = login_attempts.get(client_ip, {'count': 0, 'locked_until': 0})
-    
-    if estado_ip['locked_until'] > time.time():
-        minutos_restantes = int((estado_ip['locked_until'] - time.time()) / 60)
-        flash(f'¡Seguridad! Sistema bloqueado por demasiados intentos fallidos. Intente en {minutos_restantes} minutos.', 'error')
-        return render_template('admin_login.html')
-
     if request.method == 'POST':
         usuario = request.form.get('usuario')
         password = request.form.get('password')
@@ -40,67 +32,73 @@ def login():
                 return render_template('admin_login.html')
 
             cursor = conn.cursor()
-            cursor.execute("SELECT Usuario, PasswordHash, Rol, Activo, SedeAsignada FROM UsuariosSistema WHERE Usuario = ?", (usuario,))
+            
+            # Verificar si el usuario existe y su estado de bloqueo
+            cursor.execute("SELECT Usuario, PasswordHash, Rol, Activo, SedeAsignada, IntentosFallidos, BloqueadoHasta FROM UsuariosSistema WHERE Usuario = ?", (usuario,))
             row = cursor.fetchone()
+
+            if not row:
+                flash('Usuario o contraseña incorrectos.', 'error')
+                conn.close()
+                return render_template('admin_login.html')
+            
+            # Verificar si está bloqueado
+            import datetime
+            ahora = datetime.datetime.now()
+            
+            if row.BloqueadoHasta and row.BloqueadoHasta > ahora:
+                minutos_restantes = int((row.BloqueadoHasta - ahora).total_seconds() / 60) + 1
+                flash(f'¡Seguridad! Sistema bloqueado por demasiados intentos fallidos. Intente en {minutos_restantes} minutos.', 'error')
+                conn.close()
+                return render_template('admin_login.html')
+
+            hash_guardado = row.PasswordHash
+            es_valido = False
+            
+            if not hash_guardado.startswith('scrypt:') and not hash_guardado.startswith('pbkdf2:'):
+                es_valido = (hash_guardado == password)
+            else:
+                es_valido = check_password_hash(hash_guardado, password)
+
+            if es_valido:
+                if not row.Activo:
+                    flash('Esta cuenta está desactivada.', 'error')
+                else:
+                    # Login Correcto - Resetear contador
+                    cursor.execute("UPDATE UsuariosSistema SET IntentosFallidos = 0, BloqueadoHasta = NULL WHERE Usuario = ?", (usuario,))
+                    conn.commit()
+                    
+                    session['admin_user'] = row.Usuario
+                    session['admin_rol'] = row.Rol
+                    session['admin_sede'] = row.SedeAsignada or 'Central'
+                    conn.close()
+                    return redirect(url_for('admin_dashboard.admin_dashboard'))
+            else:
+                # Contraseña incorrecta
+                intentos_actuales = (row.IntentosFallidos or 0) + 1
+                
+                if intentos_actuales >= 5:
+                    # Bloquear por 15 minutos
+                    bloqueo_time = ahora + datetime.timedelta(minutes=15)
+                    cursor.execute("UPDATE UsuariosSistema SET IntentosFallidos = ?, BloqueadoHasta = ? WHERE Usuario = ?", (intentos_actuales, bloqueo_time, usuario))
+                    
+                    # Log en auditoría
+                    payload = json.dumps({"Target": usuario, "Alerta": "Exceso de Ataques", "Bloqueo": "15 Minutos"})
+                    cursor.execute("INSERT INTO AdminAuditLog (Usuario, Accion, Detalle, IP) VALUES (?, ?, ?, ?)", ('Sistema', 'SEC_BRUTEFORCE', payload, request.remote_addr))
+                    
+                    conn.commit()
+                    flash('¡Ataque detectado! Cuenta bloqueada por 15 minutos por seguridad.', 'error')
+                else:
+                    cursor.execute("UPDATE UsuariosSistema SET IntentosFallidos = ? WHERE Usuario = ?", (intentos_actuales, usuario))
+                    conn.commit()
+                    intentos_restantes = 5 - intentos_actuales
+                    flash(f'Usuario o contraseña incorrectos. Quedan {intentos_restantes} intento(s) antes del bloqueo.', 'error')
+
             conn.close()
 
-            if row:
-                hash_guardado = row.PasswordHash
-                es_valido = False
-                
-                # Soportar contraseñas antiguas sin encriptar (ej. biblio -> '12345')
-                if not hash_guardado.startswith('scrypt:') and not hash_guardado.startswith('pbkdf2:'):
-                    es_valido = (hash_guardado == password)
-                else:
-                    es_valido = check_password_hash(hash_guardado, password)
-
-                if es_valido:
-                    if not row.Activo:
-                        flash('Esta cuenta está desactivada.', 'error')
-                    else:
-                        # Login Correcto
-                        login_attempts.pop(client_ip, None)
-                        session['admin_user'] = row.Usuario
-                        session['admin_rol'] = row.Rol
-                        session['admin_sede'] = row.SedeAsignada or 'Central'
-                        return redirect(url_for('admin_dashboard.admin_dashboard'))
-                else:
-                    # Contraseña incorrecta
-                    login_attempts[client_ip] = estado_ip
-                    login_attempts[client_ip]['count'] += 1
-            else:
-                # Usuario no encontrado
-                login_attempts[client_ip] = estado_ip
-                login_attempts[client_ip]['count'] += 1
-
         except Exception as e:
-            # INTERCEPTOR DE ERRORES (Evita el pantallazo 500 en Producción)
             flash(f"Error técnico interno: {str(e)}", "error")
             return render_template('admin_login.html')
-            
-            if login_attempts[client_ip]['count'] >= MAX_INTENTOS:
-                login_attempts[client_ip]['locked_until'] = int(time.time()) + BLOQUEO_SEGUNDOS
-                
-                # Inyección a Auditoría de Seguridad (El Gran Ojo)
-                conn = get_db_connection()
-                if conn:
-                    try:
-                        cursor = conn.cursor()
-                        payload = json.dumps({"Target": usuario, "Alerta": "Exceso de Ataques", "Bloqueo": "15 Minutos"})
-                        cursor.execute("""
-                            INSERT INTO AdminAuditLog (Usuario, Accion, Detalle, IP)
-                            VALUES (?, ?, ?, ?)
-                        """, ('Sistema de Defensa', 'SEC_BRUTEFORCE', payload, client_ip))
-                        conn.commit()
-                    except:
-                        pass
-                    finally:
-                        conn.close()
-                
-                flash('¡Ataque detectado! IP bloqueada temporalmente por seguridad.', 'error')
-            else:
-                intentos = MAX_INTENTOS - login_attempts[client_ip]['count']
-                flash(f'Usuario o contraseña incorrectos. Quedan {intentos} intento(s) antes del bloqueo.', 'error')
 
     return render_template('admin_login.html')
 

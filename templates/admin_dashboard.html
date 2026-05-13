@@ -56,6 +56,9 @@
                 <span
                     class="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full inline-block">{{
                     total_personal }} Trabajadores</span>
+                <span
+                    class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full inline-block">{{
+                    total_docentes }} Docentes</span>
             </div>
         </div>
         <!-- Pestañas de Afluencia Multi-Sala (Drill-Down) -->
@@ -184,6 +187,9 @@
                         endif %}
                         {% if reg[4] == 'Administrativo' %}<span
                             class="text-[10px] bg-purple-100 text-purple-700 font-bold px-1 rounded ml-1">ADM</span>{%
+                        endif %}
+                        {% if reg[4] == 'Docente' %}<span
+                            class="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-1 rounded ml-1">DOC</span>{%
                         endif %}
                         {% if reg[4] == 'Alumno' %}<span
                             class="text-[10px] bg-sky-100 text-sky-700 font-bold px-1 rounded ml-1">ALU</span>{% endif

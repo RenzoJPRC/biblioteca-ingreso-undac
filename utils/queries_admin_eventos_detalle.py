@@ -30,6 +30,7 @@ def obtener_asistentes_evento(evento_id):
                     P.ApellidosNombres,
                     V.NombreCompleto,
                     I.NombreCompleto,
+                    D.ApellidosNombres,
                     'Desconocido'
                 ) AS NombreCompleto,
                 COALESCE(
@@ -38,6 +39,7 @@ def obtener_asistentes_evento(evento_id):
                     P.Oficina,
                     V.Institucion,
                     I.Institucion,
+                    D.Facultad,
                     '--'
                 ) AS Origen
             FROM AsistenciaEventos A
@@ -48,6 +50,7 @@ def obtener_asistentes_evento(evento_id):
             LEFT JOIN PersonalAdministrativo P ON A.CodigoEscaneado = P.DNI AND A.TipoPersona = 'Personal'
             LEFT JOIN Visitantes V ON A.CodigoEscaneado = V.DNI AND A.TipoPersona = 'Visitante'
             LEFT JOIN InvitadosEvento I ON A.CodigoEscaneado = I.DNI AND A.TipoPersona = 'InvitadoEvento' AND I.EventoID = A.EventoID
+            LEFT JOIN Docentes D ON A.CodigoEscaneado = D.DNI AND A.TipoPersona = 'Docente'
             WHERE A.EventoID = ?
             ORDER BY A.HoraAsistencia DESC
         """

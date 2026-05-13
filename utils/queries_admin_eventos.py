@@ -28,7 +28,7 @@ def buscar_eventos(query='', page=1, sede_filtro='Todas'):
         # Datos
         sql_datos = f"""
             SELECT EventoID, NombreEvento, FechaEvento, HoraInicio, HoraFin, Lugar, Estado,
-                   PermiteAlumnos, PermiteEgresados, PermitePersonal, PermiteVisitantes, NombreSede
+                   PermiteAlumnos, PermiteEgresados, PermitePersonal, PermiteVisitantes, PermiteDocentes, NombreSede
             {sql_base}
             ORDER BY FechaEvento DESC, HoraInicio DESC
             OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
@@ -85,7 +85,8 @@ def buscar_eventos(query='', page=1, sede_filtro='Todas'):
                 'permite_egresados': bool(row[8]),
                 'permite_personal': bool(row[9]),
                 'permite_visitantes': bool(row[10]),
-                'sede': row[11] or 'Central',
+                'permite_docentes': bool(row[11]),
+                'sede': row[12] or 'Central',
                 'total_asistentes': asistentes,
                 'total_invitados': invitados
             })
@@ -122,22 +123,23 @@ def guardar_evento(data):
         p_egr = 1 if data.get('permite_egresados') else 0
         p_per = 1 if data.get('permite_personal') else 0
         p_vis = 1 if data.get('permite_visitantes') else 0
+        p_doc = 1 if data.get('permite_docentes') else 0
 
         if evento_id: # UPDATE
             cursor.execute("""
                 UPDATE Eventos 
                 SET NombreEvento=?, FechaEvento=?, HoraInicio=?, HoraFin=?, Lugar=?, Estado=?,
-                    PermiteAlumnos=?, PermiteEgresados=?, PermitePersonal=?, PermiteVisitantes=?, NombreSede=?, SedeAsignada=?
+                    PermiteAlumnos=?, PermiteEgresados=?, PermitePersonal=?, PermiteVisitantes=?, PermiteDocentes=?, NombreSede=?, SedeAsignada=?
                 WHERE EventoID=?
-            """, (nombre, fecha, hora_inicio, hora_fin, lugar, estado, p_alu, p_egr, p_per, p_vis, sede, sede_asignada, evento_id))
+            """, (nombre, fecha, hora_inicio, hora_fin, lugar, estado, p_alu, p_egr, p_per, p_vis, p_doc, sede, sede_asignada, evento_id))
             msg = 'Evento actualizado correctamente.'
         else: # INSERT
             cursor.execute("""
                 INSERT INTO Eventos 
                 (NombreEvento, FechaEvento, HoraInicio, HoraFin, Lugar, Estado, 
-                 PermiteAlumnos, PermiteEgresados, PermitePersonal, PermiteVisitantes, NombreSede, SedeAsignada)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (nombre, fecha, hora_inicio, hora_fin, lugar, estado, p_alu, p_egr, p_per, p_vis, sede, sede_asignada))
+                 PermiteAlumnos, PermiteEgresados, PermitePersonal, PermiteVisitantes, PermiteDocentes, NombreSede, SedeAsignada)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (nombre, fecha, hora_inicio, hora_fin, lugar, estado, p_alu, p_egr, p_per, p_vis, p_doc, sede, sede_asignada))
             msg = 'Evento creado correctamente.'
             
         conn.commit()

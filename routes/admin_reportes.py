@@ -11,27 +11,24 @@ def descargar_reporte():
     conn = get_db_connection()
     sql = """
     SELECT 
-        R.RegistroID, 
-        COALESCE(A.NombreCompleto, V.NombreCompleto, E.NombreCompleto, P.ApellidosNombres) as NombreCompleto, 
-        COALESCE(A.DNI, V.DNI, E.DNI, P.DNI) as DNI, 
-        COALESCE(A.Escuela, V.Institucion, E.EscuelaProfesional, P.Oficina) as Origen, 
-        CASE 
-            WHEN R.VisitanteID IS NOT NULL THEN 'VISITANTE' 
-            WHEN R.EgresadoID IS NOT NULL THEN 'EGRESADO'
-            WHEN R.PersonalID IS NOT NULL THEN 'ADMINISTRATIVO'
-            ELSE 'ALUMNO' 
-        END as Tipo,
-        CASE 
-            WHEN ISNULL(R.Sede, 'Central') = 'Central' THEN CAST(R.Piso AS VARCHAR)
-            ELSE '' 
-        END as Piso_Acceso, 
+        R.RegistroID as ID, 
+        COALESCE(A.NombreCompleto, V.NombreCompleto, E.NombreCompleto, P.ApellidosNombres, D.ApellidosNombres) as Persona, 
+        COALESCE(A.DNI, V.DNI, E.DNI, P.DNI, D.DNI) as DNI, 
+        COALESCE(A.Escuela, V.Institucion, E.EscuelaProfesional, P.Oficina, 'Escuela de ' + D.Facultad) as Origen, 
+        ISNULL(R.TipoUsuario, 'Desconocido') as Tipo,
         ISNULL(R.Sede, 'Central') as Sede,
-        FORMAT(R.FechaHora, 'HH:mm:ss') as Hora
+        CAST(R.Piso AS VARCHAR) as Piso, 
+        ISNULL(S.NombreSala, 'N/A') as Sala,
+        R.Turno,
+        FORMAT(R.FechaHora, 'HH:mm:ss') as Hora,
+        FORMAT(R.FechaHora, 'dd/MM/yyyy') as Fecha
     FROM RegistroIngresos R 
     LEFT JOIN Alumnos A ON R.AlumnoID = A.AlumnoID
     LEFT JOIN Visitantes V ON R.VisitanteID = V.VisitanteID
     LEFT JOIN Egresados E ON R.EgresadoID = E.EgresadoID
     LEFT JOIN PersonalAdministrativo P ON R.PersonalID = P.PersonalID
+    LEFT JOIN Docentes D ON R.DocenteID = D.DocenteID
+    LEFT JOIN Salas S ON R.SalaID = S.SalaID
     WHERE CAST(R.FechaHora AS DATE) = CAST(GETDATE() AS DATE) 
     ORDER BY R.FechaHora DESC
     """
@@ -62,20 +59,13 @@ def reporte_rango():
     sql = """
     SELECT 
         R.RegistroID as ID,
-        COALESCE(A.NombreCompleto, V.NombreCompleto, E.NombreCompleto, P.ApellidosNombres) as Persona,
-        COALESCE(A.DNI, V.DNI, E.DNI, P.DNI) as DNI,
-        COALESCE(A.Escuela, V.Institucion, E.EscuelaProfesional, P.Oficina) as Origen,
-        CASE 
-            WHEN R.VisitanteID IS NOT NULL THEN 'VISITANTE' 
-            WHEN R.EgresadoID IS NOT NULL THEN 'EGRESADO'
-            WHEN R.PersonalID IS NOT NULL THEN 'ADMINISTRATIVO'
-            ELSE 'ALUMNO' 
-        END as Tipo,
-        CASE 
-            WHEN ISNULL(R.Sede, 'Central') = 'Central' THEN CAST(R.Piso AS VARCHAR)
-            ELSE '' 
-        END as Piso_Acceso,
+        COALESCE(A.NombreCompleto, V.NombreCompleto, E.NombreCompleto, P.ApellidosNombres, D.ApellidosNombres) as Persona,
+        COALESCE(A.DNI, V.DNI, E.DNI, P.DNI, D.DNI) as DNI,
+        COALESCE(A.Escuela, V.Institucion, E.EscuelaProfesional, P.Oficina, 'Escuela de ' + D.Facultad) as Origen,
+        ISNULL(R.TipoUsuario, 'Desconocido') as Tipo,
         ISNULL(R.Sede, 'Central') as Sede,
+        CAST(R.Piso AS VARCHAR) as Piso,
+        ISNULL(S.NombreSala, 'N/A') as Sala,
         R.Turno,
         FORMAT(R.FechaHora, 'HH:mm:ss') as Hora,
         FORMAT(R.FechaHora, 'dd/MM/yyyy') as Fecha
@@ -84,6 +74,8 @@ def reporte_rango():
     LEFT JOIN Visitantes V ON R.VisitanteID = V.VisitanteID
     LEFT JOIN Egresados E ON R.EgresadoID = E.EgresadoID
     LEFT JOIN PersonalAdministrativo P ON R.PersonalID = P.PersonalID
+    LEFT JOIN Docentes D ON R.DocenteID = D.DocenteID
+    LEFT JOIN Salas S ON R.SalaID = S.SalaID
     WHERE CAST(R.FechaHora AS DATE) >= ? 
     AND CAST(R.FechaHora AS DATE) <= ?
     ORDER BY R.FechaHora DESC

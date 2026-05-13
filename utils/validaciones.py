@@ -29,18 +29,9 @@ def verificar_dni_global(dni, ignora_tabla=None, ignora_id=None, cursor=None):
         else:
             cursor.execute("SELECT 1 FROM Alumnos WHERE DNI = ?", (dni,))
         if cursor.fetchone():
-            return True, "Este DNI ya está registrado como Alumno."
+            return True, "Este DNI ya está registrado como Alumno. Un estudiante no puede tener otro rol."
 
-        # 2. Verificar en Egresados (Permitir si se está registrando PersonalAdministrativo)
-        if ignora_tabla != 'PersonalAdministrativo':
-            if ignora_tabla == 'Egresados' and ignora_id:
-                cursor.execute("SELECT 1 FROM Egresados WHERE DNI = ? AND EgresadoID != ?", (dni, ignora_id))
-            else:
-                cursor.execute("SELECT 1 FROM Egresados WHERE DNI = ?", (dni,))
-            if cursor.fetchone():
-                return True, "Este DNI ya está registrado como Egresado."
-
-        # 3. Verificar en Visitantes (Nadie puede duplicarse como visitante)
+        # 2. Verificar en Visitantes (Nadie puede duplicarse con un Visitante existente)
         if ignora_tabla == 'Visitantes' and ignora_id:
             cursor.execute("SELECT 1 FROM Visitantes WHERE DNI = ? AND VisitanteID != ?", (dni, ignora_id))
         else:
@@ -48,23 +39,31 @@ def verificar_dni_global(dni, ignora_tabla=None, ignora_id=None, cursor=None):
         if cursor.fetchone():
             return True, "Este DNI ya está registrado como Visitante / Externo."
 
-        # 4. Verificar en Personal Administrativo (Permitir si se está registrando Egresado o Docente)
-        if ignora_tabla not in ['Egresados', 'Docentes']:
-            if ignora_tabla == 'PersonalAdministrativo' and ignora_id:
-                cursor.execute("SELECT 1 FROM PersonalAdministrativo WHERE DNI = ? AND PersonalID != ?", (dni, ignora_id))
-            else:
-                cursor.execute("SELECT 1 FROM PersonalAdministrativo WHERE DNI = ?", (dni,))
-            if cursor.fetchone():
-                return True, "Este DNI ya está registrado como Personal Administrativo."
+        # 3. Si registramos un Alumno o Visitante, no pueden existir en NINGUNA otra tabla (Egresados, Personal, Docentes)
+        if ignora_tabla in ['Alumnos', 'Visitantes'] or ignora_tabla is None:
+            cursor.execute("SELECT 1 FROM Egresados WHERE DNI = ?", (dni,))
+            if cursor.fetchone(): return True, "Este DNI ya está registrado como Egresado."
+            cursor.execute("SELECT 1 FROM PersonalAdministrativo WHERE DNI = ?", (dni,))
+            if cursor.fetchone(): return True, "Este DNI ya está registrado como Personal Administrativo."
+            cursor.execute("SELECT 1 FROM Docentes WHERE DNI = ?", (dni,))
+            if cursor.fetchone(): return True, "Este DNI ya está registrado como Docente."
 
-        # 5. Verificar en Docentes (Permitir si se está registrando Personal, Egresado o Visitante? NO, Docente es exclusivo)
-        if ignora_tabla != 'PersonalAdministrativo': # Si se registra personal, quizas también es docente, pero el usuario pidió bloqueo.
-            if ignora_tabla == 'Docentes' and ignora_id:
-                cursor.execute("SELECT 1 FROM Docentes WHERE DNI = ? AND DocenteID != ?", (dni, ignora_id))
-            else:
-                cursor.execute("SELECT 1 FROM Docentes WHERE DNI = ?", (dni,))
-            if cursor.fetchone():
-                return True, "Este DNI ya está registrado en el área de Docentes."
+        # 4. Los roles: Egresados, Personal Administrativo y Docentes pueden compartir el DNI.
+        # Solo verificamos que no se dupliquen dentro de su misma tabla.
+        if ignora_tabla == 'Egresados':
+            if ignora_id: cursor.execute("SELECT 1 FROM Egresados WHERE DNI = ? AND EgresadoID != ?", (dni, ignora_id))
+            else: cursor.execute("SELECT 1 FROM Egresados WHERE DNI = ?", (dni,))
+            if cursor.fetchone(): return True, "Este DNI ya está registrado como Egresado."
+
+        if ignora_tabla == 'PersonalAdministrativo':
+            if ignora_id: cursor.execute("SELECT 1 FROM PersonalAdministrativo WHERE DNI = ? AND PersonalID != ?", (dni, ignora_id))
+            else: cursor.execute("SELECT 1 FROM PersonalAdministrativo WHERE DNI = ?", (dni,))
+            if cursor.fetchone(): return True, "Este DNI ya está registrado como Personal Administrativo."
+
+        if ignora_tabla == 'Docentes':
+            if ignora_id: cursor.execute("SELECT 1 FROM Docentes WHERE DNI = ? AND DocenteID != ?", (dni, ignora_id))
+            else: cursor.execute("SELECT 1 FROM Docentes WHERE DNI = ?", (dni,))
+            if cursor.fetchone(): return True, "Este DNI ya está registrado en el área de Docentes."
 
         return False, None
     

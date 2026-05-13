@@ -25,7 +25,7 @@
 <div class="flex-1 overflow-y-auto p-6 flex flex-col h-full bg-slate-50/50">
 
     <!-- TARJETAS DE ESTADÍSTICAS -->
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 shrink-0">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 shrink-0">
         <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Asistentes</p>
             <h3 class="text-2xl font-bold text-slate-800">{{ asistentes|length }}</h3>
@@ -52,6 +52,14 @@
             <div class="flex items-end gap-2">
                 <h3 class="text-2xl font-bold text-purple-700">{{ stats.get('Personal', 0) }}</h3>
                 <i class="ph-fill ph-briefcase text-purple-300 text-2xl ml-auto"></i>
+            </div>
+        </div>
+
+        <div class="bg-indigo-50 p-4 rounded-xl shadow-sm border border-indigo-100">
+            <p class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1">Docentes</p>
+            <div class="flex items-end gap-2">
+                <h3 class="text-2xl font-bold text-indigo-700">{{ stats.get('Docente', 0) }}</h3>
+                <i class="ph-fill ph-chalkboard-teacher text-indigo-300 text-2xl ml-auto"></i>
             </div>
         </div>
 
@@ -106,6 +114,10 @@
                             {% elif p.tipo == 'Personal' %}
                             <span
                                 class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700">{{
+                                p.tipo }}</span>
+                            {% elif p.tipo == 'Docente' %}
+                            <span
+                                class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700">{{
                                 p.tipo }}</span>
                             {% elif p.tipo == 'InvitadoEvento' %}
                             <span

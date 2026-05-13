@@ -1,31 +1,43 @@
 @echo off
+setlocal
 title SISTEMA INGRESO UNDAC
-color 0a
-
-echo.
-echo ======================================================
-echo    SISTEMA BIBLIOTECARIO UNDAC - ENTORNO DE PRODUCCION
-echo ======================================================
-echo.
-echo El servidor WSGI Waitress esta arrancando...
-echo.
 
 cd /d "%~dp0"
 
-:: 1. Ejecutar el servidor en esta misma ventana
-:: OJO: No usar "start" para evitar abrir 2 ventanas y confundirse al cerrarlo
-python app.py
+echo ============================================================
+echo    SISTEMA BIBLIOTECARIO UNDAC - ENTORNO DE PRODUCCION
+echo ============================================================
+echo.
+echo Iniciando servidor del sistema...
+echo No cierres esta ventana mientras el sistema este en uso.
+echo.
 
-:: 2. Esperar unos segundos para que levante (si quieres abrir navegador auto)
-:: timeout /t 3 >nul
+echo [1/3] Esperando a que los servicios de SQL Server inicien...
+:: Esto da tiempo a que la base de datos "despierte"
+timeout /t 115 /nobreak > nul
 
-:: 3. Abrir navegador automaticamente en entorno local
-start http://127.0.0.1:5000
+set "PYTHON_EXE=%~dp0.venv\Scripts\python.exe"
 
-:: ==============================================================
-:: NOTA PARA PRODUCCION (EN LA BIBLIOTECA):
-:: Cambiar la linea de arriba ("start http://127.0.0.1:5000") por:
-:: start http://172.16.3.15:5000
-:: ==============================================================
+if not exist "%PYTHON_EXE%" (
+    echo [ERROR] No se encontro Python dentro de .venv.
+    echo.
+    echo Ejecuta primero:
+    echo py -m venv .venv
+    echo .venv\Scripts\python.exe -m pip install -r requirements.txt
+    echo.
+    pause
+    exit
+)
+
+echo Verificando Python...
+"%PYTHON_EXE%" --version
+
+echo.
+echo Abriendo sistema en navegador...
+start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" --start-maximized --app="http://127.0.0.1:5000"
+
+echo.
+echo Iniciando Waitress...
+"%PYTHON_EXE%" "%~dp0app.py"
 
 pause

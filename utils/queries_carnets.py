@@ -250,8 +250,11 @@ def procesar_excel_alumnos_async(file_bytes, task_id):
                          row.get('NOMBRES Y APELLIDOS', ''))))).strip()
             nombre = formatear_nombre_estetico(nombre_raw)
             
-            codigo = str(row.get('CÓDIGO', 
-                     row.get('CODIGO', row.get('CODIGO DE MATRICULA', '')))).strip()
+            codigo = str(row.get('CÓDIGO DE MATRÍCULA',
+                        row.get('CODIGO DE MATRICULA',
+                        row.get('CÓDIGO',
+                        row.get('CODIGO',
+                        row.get('CODIGO MATRICULA', '')))))).strip()
             if codigo.endswith('.0'): codigo = codigo[:-2]
             
             escuela = str(row.get('ESCUELA PROFESIONAL', row.get('ESCUELA', ''))).strip()
@@ -260,10 +263,14 @@ def procesar_excel_alumnos_async(file_bytes, task_id):
             if facultad.lower() in ('nan', 'null', 'none', '0'): facultad = ''
             
             correo_inst = str(row.get('CORREO INSTITUCIONAL', '')).strip()
-            if correo_inst.lower() in ('nan', 'null', 'none', '0'): correo_inst = ''
-            
-            correo_per = str(row.get('CORREO PERSONAL', '')).strip()
-            if correo_per.lower() in ('nan', 'null', 'none', '0'): correo_per = ''
+            if correo_inst.lower() in ('nan', 'null', 'none', '0'):
+                correo_inst = ''
+
+            correo_per = str(row.get('CORREO PERSONAL',
+                         row.get('CORREO ALTERNO',
+                         row.get('CORREO ALTERNATIVO', '')))).strip()
+            if correo_per.lower() in ('nan', 'null', 'none', '0'):
+                correo_per = ''
 
             semestre = str(row.get('SEMESTRE', '')).strip()
             if semestre.endswith('.0'): semestre = semestre[:-2]

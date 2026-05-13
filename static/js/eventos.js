@@ -71,6 +71,7 @@ function renderizarTabla(eventos) {
         if (evt.permite_egresados) groups.push('Egr');
         if (evt.permite_personal) groups.push('Per');
         if (evt.permite_visitantes) groups.push('Vis');
+        if (evt.permite_docentes) groups.push('Doc');
         let txtGrupos = groups.length > 0 ? groups.join(', ') : 'Ninguno';
         if (groups.length === 4) txtGrupos = "Todos autorizados";
 
@@ -143,6 +144,7 @@ function abrirModalNuevo() {
     document.getElementById('chk-egresados').checked = false;
     document.getElementById('chk-personal').checked = false;
     document.getElementById('chk-visitantes').checked = false;
+    document.getElementById('chk-docentes').checked = false;
 
     document.getElementById('modal-evento').classList.remove('hidden');
     document.getElementById('modal-nombre').focus();
@@ -174,6 +176,7 @@ function editarEvento(id) {
             document.getElementById('chk-egresados').checked = evento.permite_egresados;
             document.getElementById('chk-personal').checked = evento.permite_personal;
             document.getElementById('chk-visitantes').checked = evento.permite_visitantes;
+            document.getElementById('chk-docentes').checked = evento.permite_docentes;
 
             document.getElementById('modal-titulo').innerHTML = `<i class="ph ph-calendar-edit text-rose-600 text-2xl"></i><span>Editar Evento</span>`;
 
@@ -197,7 +200,8 @@ function guardarEvento(e) {
         permite_alumnos: document.getElementById('chk-alumnos').checked,
         permite_egresados: document.getElementById('chk-egresados').checked,
         permite_personal: document.getElementById('chk-personal').checked,
-        permite_visitantes: document.getElementById('chk-visitantes').checked
+        permite_visitantes: document.getElementById('chk-visitantes').checked,
+        permite_docentes: document.getElementById('chk-docentes').checked
     };
 
     fetch('/admin/guardar_evento', {

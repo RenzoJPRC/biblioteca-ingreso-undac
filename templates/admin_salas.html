@@ -34,6 +34,7 @@
             <div class="p-6">
                 <form action="{{ url_for('admin_salas.crear') }}" method="POST"
                     class="flex flex-col md:flex-row gap-4 items-end">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <div class="flex-1 w-full">
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nombre de la
                             Sala</label>
@@ -41,8 +42,19 @@
                             class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all shadow-sm">
                     </div>
                     <div class="w-full md:w-48">
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Piso
-                            Físico</label>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Sede</label>
+                        <select name="sede" required
+                            class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all shadow-sm">
+                            <option value="Central">Sede Central</option>
+                            <option value="Tarma">Tarma</option>
+                            <option value="Oxapampa">Oxapampa</option>
+                            <option value="Yanahuanca">Yanahuanca</option>
+                            <option value="Paucartambo">Paucartambo</option>
+                            <option value="La Merced">La Merced</option>
+                        </select>
+                    </div>
+                    <div class="w-full md:w-32">
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Piso</label>
                         <select name="piso" required
                             class="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all shadow-sm">
                             <option value="1">Piso 1</option>
@@ -111,6 +123,8 @@
                             <td class="px-6 py-4 text-right">
                                 <form action="{{ url_for('admin_salas.toggle_estado', sala_id=sala.SalaID) }}"
                                     method="POST">
+
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                     {% if sala.Activo %}
                                     <input type="hidden" name="estado" value="0">
                                     <button type="submit"

@@ -42,56 +42,32 @@
 
         {% if session.get('admin_rol') == 'SuperAdmin' %}
         <div>
-            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Externos</p>
-            <div class="space-y-1">
-                <a href="/admin/visitantes"
-                    class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {% if request.path == '/admin/visitantes' %} bg-sky-600 text-white shadow-lg shadow-sky-900/20 {% else %} text-slate-400 hover:text-white hover:bg-slate-800 {% endif %}">
-                    <i class="ph ph-users-three text-lg"></i>
-                    <span class="text-sm font-medium">Gestión Visitantes</span>
-                </a>
-            </div>
-        </div>
-
-        <div>
-            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Alumnos</p>
+            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Gestión de Usuarios</p>
             <div class="space-y-1">
                 <a href="/admin/carnets"
                     class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {% if request.path == '/admin/carnets' %} bg-sky-600 text-white shadow-lg shadow-sky-900/20 {% else %} text-slate-400 hover:text-white hover:bg-slate-800 {% endif %}">
                     <i class="ph ph-identification-card text-lg"></i>
-                    <span class="text-sm font-medium">Gestión Alumnos</span>
+                    <span class="text-sm font-medium">Alumnos</span>
                 </a>
-            </div>
-        </div>
-
-        <div>
-            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Egresados</p>
-            <div class="space-y-1">
+                <a href="/admin/docentes"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {% if request.path == '/admin/docentes' %} bg-sky-600 text-white shadow-lg shadow-sky-900/20 {% else %} text-slate-400 hover:text-white hover:bg-slate-800 {% endif %}">
+                    <i class="ph ph-chalkboard-teacher text-lg"></i>
+                    <span class="text-sm font-medium">Docentes</span>
+                </a>
                 <a href="/admin/egresados"
                     class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {% if request.path == '/admin/egresados' %} bg-sky-600 text-white shadow-lg shadow-sky-900/20 {% else %} text-slate-400 hover:text-white hover:bg-slate-800 {% endif %}">
                     <i class="ph ph-graduation-cap text-lg"></i>
-                    <span class="text-sm font-medium">Gestión Egresados</span>
+                    <span class="text-sm font-medium">Egresados</span>
                 </a>
-            </div>
-        </div>
-
-        <div>
-            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Personal</p>
-            <div class="space-y-1">
                 <a href="/admin/personal"
                     class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {% if request.path == '/admin/personal' %} bg-sky-600 text-white shadow-lg shadow-sky-900/20 {% else %} text-slate-400 hover:text-white hover:bg-slate-800 {% endif %}">
                     <i class="ph ph-briefcase text-lg"></i>
                     <span class="text-sm font-medium">Personal Admin.</span>
                 </a>
-            </div>
-        </div>
-
-        <div>
-            <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Docentes</p>
-            <div class="space-y-1">
-                <a href="/admin/docentes"
-                    class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {% if request.path == '/admin/docentes' %} bg-sky-600 text-white shadow-lg shadow-sky-900/20 {% else %} text-slate-400 hover:text-white hover:bg-slate-800 {% endif %}">
-                    <i class="ph ph-chalkboard-teacher text-lg"></i>
-                    <span class="text-sm font-medium">Gestión Docentes</span>
+                <a href="/admin/visitantes"
+                    class="flex items-center gap-3 px-3 py-2 rounded-lg transition-all {% if request.path == '/admin/visitantes' %} bg-sky-600 text-white shadow-lg shadow-sky-900/20 {% else %} text-slate-400 hover:text-white hover:bg-slate-800 {% endif %}">
+                    <i class="ph ph-users-three text-lg"></i>
+                    <span class="text-sm font-medium">Visitantes</span>
                 </a>
             </div>
         </div>

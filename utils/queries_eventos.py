@@ -16,7 +16,7 @@ def obtener_agenda_eventos_hoy(sede="Central"):
             FROM Eventos 
             WHERE FechaEvento = CAST(GETDATE() AS DATE)
             AND Estado != 'Cancelado'
-            AND NombreSede = ?
+            AND (NombreSede = ? OR NombreSede = 'Todas' OR NombreSede = 'MULTIPLES (TODAS)')
             ORDER BY HoraInicio ASC
         """
         cursor.execute(sql, (sede,))
@@ -30,6 +30,9 @@ def obtener_agenda_eventos_hoy(sede="Central"):
         for row in rows:
             h_ini = row[2]
             h_fin = row[3]
+            
+            if not h_ini or not h_fin:
+                continue
             
             def to_minutes(t):
                 return t.hour * 60 + t.minute
@@ -112,13 +115,13 @@ def procesar_ingreso_evento(codigo, evento_id):
         cursor = conn.cursor()
         
         # 1. Obtener reglas del evento
-        cursor.execute("SELECT PermiteAlumnos, PermiteEgresados, PermitePersonal, PermiteVisitantes, NombreEvento FROM Eventos WHERE EventoID = ?", (evento_id,))
+        cursor.execute("SELECT PermiteAlumnos, PermiteEgresados, PermitePersonal, PermiteVisitantes, PermiteDocentes, NombreEvento FROM Eventos WHERE EventoID = ?", (evento_id,))
         evento = cursor.fetchone()
         
         if not evento:
             return {'status': 'error', 'msg': 'Evento no encontrado o finalizado.'}
             
-        p_alum, p_egre, p_pers, p_vis, nombre_evento = evento
+        p_alum, p_egre, p_pers, p_vis, p_doc, nombre_evento = evento
         
         # 2. Variable para almacenar el tipo encontrado
         tipo_persona = None
@@ -185,17 +188,29 @@ def procesar_ingreso_evento(codigo, evento_id):
                         else:
                             return {'status': 'error', 'msg': 'Acceso denegado: Evento no habilitado para Personal.'}
                     else:
-                        # E) ES VISITANTE?
-                        cursor.execute("SELECT NombreCompleto, Institucion FROM Visitantes WHERE DNI = ?", (codigo,))
-                        vis = cursor.fetchone()
-                        if vis:
-                            if p_vis:
-                                tipo_persona = 'Visitante'
-                                nombre_persona = vis[0]
-                                escuela_persona = vis[1] if vis[1] else 'Visitante Externo'
-                                semestre_persona = 'VISITANTE'
+                        # E) ES DOCENTE?
+                        cursor.execute("SELECT ApellidosNombres, Facultad FROM Docentes WHERE DNI = ?", (codigo,))
+                        doc = cursor.fetchone()
+                        if doc:
+                            if p_doc:
+                                tipo_persona = 'Docente'
+                                nombre_persona = doc[0]
+                                escuela_persona = doc[1] if doc[1] else 'Docente'
+                                semestre_persona = 'DOCENTE'
                             else:
-                                return {'status': 'error', 'msg': 'Acceso denegado: Evento no habilitado para Visitantes.'}
+                                return {'status': 'error', 'msg': 'Acceso denegado: Evento no habilitado para Docentes.'}
+                        else:
+                            # F) ES VISITANTE?
+                            cursor.execute("SELECT NombreCompleto, Institucion FROM Visitantes WHERE DNI = ?", (codigo,))
+                            visit = cursor.fetchone()
+                            if visit:
+                                if p_vis:
+                                    tipo_persona = 'Visitante'
+                                    nombre_persona = visit[0]
+                                    escuela_persona = visit[1] if visit[1] else 'Visitante Externo'
+                                    semestre_persona = 'VISITANTE'
+                                else:
+                                    return {'status': 'error', 'msg': 'Acceso denegado: Evento no habilitado para Visitantes.'}
         
         # SI NO ENCONTRÓ NADA
         if not tipo_persona:
@@ -239,9 +254,9 @@ def procesar_ingreso_evento(codigo, evento_id):
 
 def obtener_sede_evento(evento_id):
     """
-    Retorna la sede a la que pertenece un evento. Por defecto 'Central'.
+    Retorna la sede a la que pertenece un evento. Por defecto None si no existe.
     """
-    sede_evento = "Central"
+    sede_evento = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()

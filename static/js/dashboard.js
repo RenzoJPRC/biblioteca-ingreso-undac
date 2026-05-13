@@ -67,7 +67,7 @@ function inicializarFormularioRangoFechas() {
             const ini = document.getElementById('fecha-inicio').value;
             const fin = document.getElementById('fecha-fin').value;
             if (ini && fin) {
-                window.location.href = `/admin/exportar_ingresos_csv?inicio=${ini}&fin=${fin}`;
+                window.location.href = `/admin/reporte_rango?inicio=${ini}&fin=${fin}`;
                 document.getElementById('modal-fechas').classList.add('hidden');
             } else {
                 if (typeof showToast !== 'undefined') {
@@ -118,6 +118,8 @@ function inicializarAutoRefresh(isToday) {
                             pillHTML = '<span class="text-[10px] bg-orange-100 text-orange-700 font-bold px-1 rounded ml-1">EXT</span>';
                         } else if (reg.tipo === 'Administrativo') {
                             pillHTML = '<span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-1 rounded ml-1">ADM</span>';
+                        } else if (reg.tipo === 'Docente') {
+                            pillHTML = '<span class="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-1 rounded ml-1">DOC</span>';
                         } else if (reg.tipo === 'Alumno') {
                             pillHTML = '<span class="text-[10px] bg-sky-100 text-sky-700 font-bold px-1 rounded ml-1">ALU</span>';
                         } else if (reg.tipo === 'Egresado') {
@@ -143,9 +145,9 @@ function inicializarAutoRefresh(isToday) {
                                     <span class="font-mono text-[13px]">${reg.hora}</span>
                                 </td>
                                 <td class="px-6 py-3 font-medium">
-                                    ${reg.nombre} ${pillHTML}
+                                    ${reg.nombre || 'Desconocido'} ${pillHTML}
                                 </td>
-                                <td class="px-6 py-3 text-slate-500">${reg.origen}</td>
+                                <td class="px-6 py-3 text-slate-500">${reg.origen || ''}</td>
                                 <td class="px-6 py-3 text-center font-medium text-slate-600">${ubicacionHTML}</td>
                             </tr>
                         `;

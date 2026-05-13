@@ -12,10 +12,10 @@ def registrar_ingreso_general(codigo, sala_id):
     try:
         cursor = conn.cursor()
         sql = """
-        DECLARE @out_msg nvarchar(100);
+        DECLARE @out_msg nvarchar(250);
         DECLARE @out_nombre nvarchar(250);
-        DECLARE @out_escuela nvarchar(100);
-        DECLARE @out_semestre varchar(20);
+        DECLARE @out_escuela nvarchar(200);
+        DECLARE @out_semestre nvarchar(40);
         
         -- Ejecutamos el procedimiento enviando Codigo y SalaID
         EXEC sp_RegistrarIngreso ?, ?, @out_msg OUTPUT, @out_nombre OUTPUT, @out_escuela OUTPUT, @out_semestre OUTPUT;

@@ -1,5 +1,7 @@
 from flask import Blueprint, render_template, request, Response, session, send_file
 from utils.queries_dashboard import obtener_datos_dashboard, obtener_registros_csv
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 import json
 import time
 import io
@@ -22,6 +24,7 @@ def admin_dashboard():
                            total_visitantes=dash_data['total_visitantes'], 
                            total_egresados=dash_data['total_egresados'], 
                            total_personal=dash_data['total_personal'],
+                           total_docentes=dash_data.get('total_docentes', 0),
                            pisos=dash_data['pisos'], 
                            salas=dash_data.get('salas', {}),
                            sedes=dash_data['sedes'],
@@ -48,6 +51,7 @@ def api_dashboard_stream():
                     'total_visitantes': dash_data['total_visitantes'],
                     'total_egresados': dash_data['total_egresados'],
                     'total_personal': dash_data['total_personal'],
+                    'total_docentes': dash_data.get('total_docentes', 0),
                     'pisos': dash_data['pisos'],
                     'salas': dash_data.get('salas', {}),
                     'sedes': dash_data['sedes'],
@@ -64,25 +68,94 @@ def api_dashboard_stream():
 def exportar_ingresos_excel():
     f_inicio = request.args.get('inicio')
     f_fin = request.args.get('fin')
+
     sede_filtro = session.get('admin_sede') if session.get('admin_rol') == 'Supervisor' else None
+
     registros = obtener_registros_csv(f_inicio, f_fin, sede_filtro)
-    
-    # Crear DataFrame (desempaquetando pyodbc.Row para evitar index mismatches)
+
     datos_limpios = [tuple(r) for r in registros]
-    df = pd.DataFrame(datos_limpios, columns=['ID', 'Usuario', 'Sede', 'Piso', 'Fecha Hora', 'Turno', 'Perfil', 'Lugar Origen'])
-    
+
+    columnas = [
+        'ID',
+        'Usuario',
+        'DNI',
+        'Código Matrícula',
+        'Perfil',
+        'Sede',
+        'Piso',
+        'Sala',
+        'Turno',
+        'Fecha',
+        'Hora',
+        'Facultad / Área',
+        'Escuela / Institución / Oficina'
+    ]
+
+    df = pd.DataFrame(datos_limpios, columns=columnas)
+
     output = io.BytesIO()
+
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Reporte Ingresos')
+        df.to_excel(writer, index=False, sheet_name='Ingresos')
+
+        ws = writer.sheets['Ingresos']
+
+        # Estilo del encabezado
+        header_fill = PatternFill("solid", fgColor="1F4E78")
+        header_font = Font(color="FFFFFF", bold=True)
+        thin_border = Border(
+            left=Side(style='thin', color='D9E2F3'),
+            right=Side(style='thin', color='D9E2F3'),
+            top=Side(style='thin', color='D9E2F3'),
+            bottom=Side(style='thin', color='D9E2F3')
+        )
+
+        for cell in ws[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.border = thin_border
+
+        # Bordes y alineación del contenido
+        for row in ws.iter_rows(min_row=2):
+            for cell in row:
+                cell.border = thin_border
+                cell.alignment = Alignment(vertical="center")
+
+        # Congelar encabezado
+        ws.freeze_panes = "A2"
+
+        # Autofiltro
+        ws.auto_filter.ref = ws.dimensions
+
+        # Ajustar ancho de columnas
+        for column_cells in ws.columns:
+            max_length = 0
+            column_letter = get_column_letter(column_cells[0].column)
+
+            for cell in column_cells:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except:
+                    pass
+
+            adjusted_width = min(max_length + 3, 45)
+            ws.column_dimensions[column_letter].width = adjusted_width
+
+        # Altura del encabezado
+        ws.row_dimensions[1].height = 22
+
     output.seek(0)
 
-    filename = "Reporte_Ingresos_Global.xlsx"
-    if f_inicio or f_fin:
-        filename = f"Reporte_Ingresos_{f_inicio or 'Inicio'}_al_{f_fin or 'Fin'}.xlsx"
+    if f_inicio and f_fin:
+        filename = f"Reporte_Ingresos_{f_inicio}_al_{f_fin}.xlsx"
+    else:
+        filename = "Reporte_Ingresos_Hoy.xlsx"
 
     return send_file(
-        output, 
-        download_name=filename, 
-        as_attachment=True, 
+        output,
+        download_name=filename,
+        as_attachment=True,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )

@@ -31,17 +31,66 @@ def index():
 def ingreso_sala(sala_id):
     conn = get_db_connection()
     cursor = conn.cursor()
+    
+    # 1. Obtener la info de la sala
     cursor.execute("SELECT NombreSala, Piso, Sede FROM Salas WHERE SalaID = ? AND Activo = 1", (sala_id,))
     row = cursor.fetchone()
-    conn.close()
     
     if not row:
+        conn.close()
         return "ERROR: Sala inactiva o no registrada en el sistema. Contacte Administración.", 404
         
-    return render_template('ingreso.html', sala_id=sala_id, nombre_sala=row.NombreSala, piso=row.Piso, sede=row.Sede)
+    # 2. NUEVO: Obtener la cantidad de ingresos exitosos de hoy para esta sala
+    contador_inicial = 0
+    try:
+        cursor.execute("""
+            SELECT COUNT(*) 
+            FROM RegistroIngresos 
+            WHERE SalaID = ? AND CAST(FechaHora AS DATE) = CAST(GETDATE() AS DATE)
+        """, (sala_id,))
+        res = cursor.fetchone()
+        if res:
+            contador_inicial = res[0]
+    except Exception as e:
+        print("Aviso - No se pudo cargar el contador inicial:", e)
+        
+    conn.close()
+    
+    # Pasamos el contador_inicial a la plantilla
+    return render_template('ingreso.html', 
+                           sala_id=sala_id, 
+                           nombre_sala=row.NombreSala, 
+                           piso=row.Piso, 
+                           sede=row.Sede,
+                           contador_inicial=contador_inicial)
 
 @ingreso_bp.route('/filial/<sede>')
-def filial(sede): return render_template('ingreso.html', sala_id=1, nombre_sala="Principal", piso=1, sede=sede)
+def filial(sede):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Buscar la primera sala activa de esta filial
+    cursor.execute("SELECT SalaID, NombreSala, Piso FROM Salas WHERE Sede = ? AND Activo = 1 ORDER BY Piso ASC, NombreSala ASC", (sede,))
+    row = cursor.fetchone()
+    
+    if not row:
+        conn.close()
+        return f"""
+        <div style='font-family: sans-serif; padding: 40px; text-align: center;'>
+            <h1 style='color: #dc2626;'>Acceso Bloqueado</h1>
+            <p>No existe ninguna sala o ambiente configurado para la filial <b>{sede}</b>.</p>
+            <p>Por favor, pídele al administrador que ingrese al Panel y cree la sala en "Gestión de Salas".</p>
+            <a href='/' style='color: #2563eb;'>Volver al Menú Principal</a>
+        </div>
+        """, 404
+        
+    sala_id = row.SalaID
+    nombre_sala = row.NombreSala
+    piso = row.Piso
+        
+    conn.close()
+    
+    return render_template('ingreso.html', sala_id=sala_id, nombre_sala=nombre_sala, piso=piso, sede=sede)
 
 # API: PROCESAR EL ESCANEO
 @ingreso_bp.route('/procesar_ingreso', methods=['POST'])
