@@ -131,8 +131,13 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Código de Matrícula *</label>
-                    <input type="text" id="modal-codigo" required
-                        class="border border-slate-300 w-full p-2.5 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                    <div class="relative">
+                        <input type="text" id="modal-codigo" required
+                            class="border border-slate-300 w-full p-2.5 pr-12 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all" placeholder="Buscar en UNDAC...">
+                        <button type="button" onclick="buscarEgresadoUNDAC()" class="absolute right-1.5 top-1.5 bottom-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white px-3 rounded-md transition-all flex items-center justify-center" title="Autocompletar con UNDAC">
+                            <i class="ph-bold ph-magnifying-glass"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -376,6 +381,49 @@
         document.getElementById('modal-dni').readOnly = false;
         document.getElementById('modal-codigo').readOnly = false;
         document.getElementById('modal-egresado').classList.remove('hidden');
+    }
+
+    async function buscarEgresadoUNDAC() {
+        const codigoInput = document.getElementById('modal-codigo');
+        const codigo = codigoInput.value.trim();
+        
+        if (!codigo) {
+            if (typeof showToast !== 'undefined') showToast("Escribe un código primero", "error");
+            else alert("Escribe un código primero");
+            return;
+        }
+        
+        const btnIcon = codigoInput.nextElementSibling.querySelector('i');
+        btnIcon.className = "ph-bold ph-spinner animate-spin";
+        
+        try {
+            const response = await fetch(`/api/undac/alumno/${codigo}`);
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                document.getElementById('modal-nombre').value = data.data.nombre_completo;
+                document.getElementById('modal-dni').value = data.data.dni;
+                
+                // La API da la escuela en "Programa facultad"
+                document.getElementById('modal-escuela').value = data.data.facultad;
+                document.getElementById('modal-facultad').value = ""; // Dejar vacío para que el usuario lo llene
+                document.getElementById('modal-facultad').focus(); // Enfocar para que sepa que falta
+                
+                if (data.data.correo) {
+                    document.getElementById('modal-correo-inst').value = data.data.correo;
+                }
+                
+                if (typeof showToast !== 'undefined') showToast("Datos autocompletados", "success");
+            } else {
+                if (typeof showToast !== 'undefined') showToast(data.msg, "error");
+                else alert(data.msg);
+            }
+        } catch (error) {
+            if (typeof showToast !== 'undefined') showToast("Error de conexión", "error");
+            console.error(error);
+        } finally {
+            btnIcon.className = "ph-bold ph-magnifying-glass";
+        }
     }
 
     function abrirModalEditar(egresado) {

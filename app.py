@@ -29,6 +29,7 @@ from routes.admin_accesos import admin_accesos_bp
 from routes.admin_auditoria import admin_auditoria_bp
 from routes.admin_backup import admin_backup_bp
 from routes.admin_salas import admin_salas_bp
+from routes.api_undac import api_undac_bp
 
 
 app = Flask(__name__)
@@ -126,10 +127,12 @@ def requerir_login_admin():
     # Restricción para rol Supervisor
     if session.get("admin_rol") == "Supervisor":
         rutas_permitidas = [
+            "/admin",
             "/admin/",
             "/admin/login",
             "/admin/logout",
             "/admin/api/dashboard_data",
+            "/admin/reporte_rango",
             "/admin/exportar_ingresos_excel",
             "/admin/eventos",
             "/admin/buscar_eventos",
@@ -237,7 +240,7 @@ app.register_blueprint(admin_accesos_bp)
 app.register_blueprint(admin_auditoria_bp)
 app.register_blueprint(admin_backup_bp)
 app.register_blueprint(admin_salas_bp)
-
+app.register_blueprint(api_undac_bp)
 
 # ============================================================
 # ARRANQUE DEL SERVIDOR

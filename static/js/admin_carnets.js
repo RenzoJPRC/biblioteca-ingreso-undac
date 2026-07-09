@@ -350,6 +350,83 @@ function guardarAlumnoCompleto() {
         .catch(err => console.error(err));
 }
 
+function abrirModalNuevo() {
+    document.getElementById('nuevo-nombre').value = '';
+    document.getElementById('nuevo-dni').value = '';
+    document.getElementById('nuevo-codigo').value = '';
+    document.getElementById('nuevo-escuela').value = '';
+    document.getElementById('nuevo-fecha').value = '';
+    document.getElementById('modal-nuevo').classList.remove('hidden');
+}
+
+function cerrarModalNuevo() {
+    document.getElementById('modal-nuevo').classList.add('hidden');
+}
+
+async function buscarAlumnoUNDAC() {
+    const codigoInput = document.getElementById('nuevo-codigo');
+    const codigo = codigoInput.value.trim();
+    
+    if (!codigo) {
+        if (typeof showToast !== 'undefined') showToast("Escribe un código primero", "error");
+        else alert("Escribe un código primero");
+        return;
+    }
+    
+    // Feedback visual
+    const btnIcon = codigoInput.nextElementSibling.querySelector('i');
+    btnIcon.className = "ph-bold ph-spinner animate-spin";
+    
+    try {
+        const response = await fetch(`/api/undac/alumno/${codigo}`);
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            document.getElementById('nuevo-nombre').value = data.data.nombre_completo;
+            document.getElementById('nuevo-dni').value = data.data.dni;
+            document.getElementById('nuevo-escuela').value = data.data.facultad;
+            
+            if (typeof showToast !== 'undefined') showToast("Datos autocompletados", "success");
+        } else {
+            if (typeof showToast !== 'undefined') showToast(data.msg, "error");
+            else alert(data.msg);
+        }
+    } catch (error) {
+        if (typeof showToast !== 'undefined') showToast("Error de conexión con el servidor", "error");
+        console.error(error);
+    } finally {
+        btnIcon.className = "ph-bold ph-magnifying-glass";
+    }
+}
+
+function guardarNuevoAlumno() {
+    const data = {
+        nombre: document.getElementById('nuevo-nombre').value,
+        dni: document.getElementById('nuevo-dni').value,
+        codigo: document.getElementById('nuevo-codigo').value,
+        escuela: document.getElementById('nuevo-escuela').value,
+        fecha: document.getElementById('nuevo-fecha').value
+    };
+
+    fetch('/admin/crear_alumno', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+        .then(res => res.json())
+        .then(resData => {
+            if (resData.status === 'success') {
+                if (typeof showToast !== 'undefined') showToast("Alumno creado con éxito", "success");
+                cerrarModalNuevo();
+                buscarAlumno(1); // Carga la primera página para que vea su registro
+            } else {
+                if (typeof showToast !== 'undefined') showToast('Error: ' + resData.msg, "error");
+                else alert('Error: ' + resData.msg);
+            }
+        })
+        .catch(err => console.error(err));
+}
+
 function eliminarAlumno(id, nombre) {
     if (!confirm(`¿Estás SEGURO de eliminar permanentemente al alumno "${nombre}"? Esta acción borrará también su historial.`)) {
         return;

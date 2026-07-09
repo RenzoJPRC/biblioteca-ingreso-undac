@@ -79,6 +79,36 @@ def buscar_alumnos_paginados(query, page, limit):
     
     return resultados, total_items, total_pages
 
+def crear_alumno_individual(data):
+    buscar_alumnos_paginados.cache_clear()
+    nombre = data.get('nombre')
+    dni = data.get('dni')
+    codigo = data.get('codigo')
+    escuela = data.get('escuela')
+    fecha = data.get('fecha')
+    
+    val_fecha = fecha if fecha else None
+    
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        
+        # Validar DNI si existe
+        if dni and len(dni) >= 5:
+            err_bool, msg_valid = verificar_dni_global(dni, ignora_tabla='', cursor=cursor)
+            if err_bool: return False, f"Error: {msg_valid}"
+            
+        cursor.execute("""
+            INSERT INTO Alumnos (NombreCompleto, DNI, CodigoMatricula, Escuela, FechaVencimientoCarnet, Estado)
+            VALUES (?, ?, ?, ?, ?, 1)
+        """, (nombre, dni, codigo, escuela, val_fecha))
+        conn.commit()
+        return True, "Alumno creado correctamente"
+    except Exception as e:
+        return False, str(e)
+    finally:
+        conn.close()
+
 def actualizar_alumno_completo_db(data):
     buscar_alumnos_paginados.cache_clear()
     alumno_id = data.get('id')

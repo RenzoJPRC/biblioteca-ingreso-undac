@@ -25,21 +25,27 @@ def traducir_accion(accion_raw):
     
     # === ELIMINACIONES & DELETES ===
     if 'ELIMINAR_ALUMNOS_MASIVO' in a: return 'Borrar Alumnos (Masivo)'
+    if 'ELIMINAR_ALUMNO' in a: return 'Borrar Alumno (Individual)'
     if 'ELIMINAR_EGRESADOS_MASIVO' in a or 'EGRESADOS/ELIMINAR' in a: return 'Borrar Egresados (Masivo)'
     if 'ELIMINAR_PERSONAL_MASIVO' in a or 'PERSONAL/ELIMINAR' in a: return 'Borrar Personal (Masivo)'
     if 'ELIMINAR_VISITANTE' in a or 'VISITANTES/ELIMINAR' in a: return 'Borrar Visitante'
     if 'ELIMINAR_EVENTO' in a: return 'Eliminar Evento'
     if 'ELIMINAR_DOCENTES_MASIVO' in a: return 'Borrar Docentes (Masivo)'
+    if 'ELIMINAR_DOCENTE' in a: return 'Borrar Docente'
     
     # === MODIFICACIONES & ALTAS ===
     if 'ACTUALIZAR_CARNET_MASIVO' in a: return 'Alterar Carnets (Masivo)'
     if 'ACTUALIZAR_CARNET_GLOBAL' in a: return 'Alterar Carnets (Global)'
+    if 'ACTUALIZAR_ALUMNO_COMPLETO' in a: return 'Editar Alumno'
+    if 'CREAR_ALUMNO' in a: return 'Crear Alumno (Individual)'
     if 'EGRESADOS/ACCION_MASIVA' in a: return 'Alterar Egresados'
     if 'GUARDAR_EGRESADO' in a: return 'Crear/Editar Egresado'
     if 'GUARDAR_PERSONAL' in a: return 'Crear/Editar Personal'
+    if 'GUARDAR_DOCENTES' in a: return 'Crear/Editar Docente'
     if 'AGREGAR_VISITANTE' in a: return 'Crear Visitante'
     if 'GUARDAR_EVENTO' in a or 'CREAR_EVENTO' in a or 'CREAR EVENTO' in a: return 'Crear Evento'
     if 'SALAS/CREAR' in a: return 'Crear Nueva Sala'
+    if 'SALAS/TOGGLE' in a: return 'Activar/Desactivar Sala'
     if 'IMPORTAR_DOCENTES' in a: return 'Importar Docentes'
     if 'IMPORTAR_ALUMNOS' in a: return 'Importar Alumnos'
     

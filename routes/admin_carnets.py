@@ -9,6 +9,7 @@ from utils.task_manager import create_task
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.queries_carnets import (
     buscar_alumnos_paginados,
+    crear_alumno_individual,
     actualizar_alumno_completo_db,
     eliminar_alumno_individual,
     vaciar_alumnos_db,
@@ -41,6 +42,19 @@ def buscar_alumno():
             'total_pages': total_pages
         }
     })
+
+@admin_carnets_bp.route('/crear_alumno', methods=['POST'])
+def crear_alumno():
+    data = request.json
+    nombre = data.get('nombre')
+    
+    if not nombre: return jsonify({'status': 'error', 'msg': 'El nombre es obligatorio'})
+
+    success, msg = crear_alumno_individual(data)
+    if success:
+        return jsonify({'status': 'success', 'msg': msg})
+    else:
+        return jsonify({'status': 'error', 'msg': msg})
 
 @admin_carnets_bp.route('/actualizar_alumno_completo', methods=['POST'])
 def actualizar_alumno_completo():
