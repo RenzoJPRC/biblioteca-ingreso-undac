@@ -1,11 +1,25 @@
-temp_db_analysis/
-__pycache__/
-*.pyc
+# Archivos de entorno y claves secretas
 .env
-.venv
+.env.*
+*.env
+
+# Carpetas temporales y volcado de datos reales
+temp_db_analysis/
+scratch/
+*.xlsx
+*.xls
+*.csv
+*.log
+*.bak
+*.zip
+
+# Entorno virtual y caché de Python
+.venv/
 env/
 venv/
-.idea/
+__pycache__/
+*.pyc
+
+# Configuraciones de IDEs
 .vscode/
-*.zip
-*.bak
+.idea/

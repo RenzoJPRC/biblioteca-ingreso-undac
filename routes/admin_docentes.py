@@ -38,11 +38,11 @@ def eliminar_docentes_endp(id):
 @admin_docentes_bp.route('/subir_excel_docentes', methods=['POST'])
 def subir_excel_docentes():
     if 'archivo_excel' not in request.files: 
-        return jsonify({'status': 'error', 'msg': 'Falta archivo'})
+        return jsonify({'status': 'error', 'msg': 'No se adjuntó ningún archivo'})
     
     file = request.files['archivo_excel']
-    if file.filename == '':
-        return jsonify({'status': 'error', 'msg': 'Nombre vacío'})
+    if not file.filename or not file.filename.lower().endswith(('.xlsx', '.xls')):
+        return jsonify({'status': 'error', 'msg': 'Formato no válido. Únicamente se permiten archivos Excel (.xlsx, .xls)'})
         
     try:
         print("1. Recibiendo archivo Excel de Docentes y delegando a segundo plano...")

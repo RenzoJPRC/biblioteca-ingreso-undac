@@ -4,6 +4,7 @@
 <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
     <h2 class="text-lg font-bold text-slate-700">Gestión de Docentes</h2>
     <div class="flex gap-2">
+        {% if session.get('admin_rol') != 'Consultor' %}
         <button onclick="document.getElementById('modal-upload-docente').classList.remove('hidden')"
             class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow flex items-center gap-2 transition-colors">
             <i class="ph ph-file-csv text-lg"></i> Importar Excel
@@ -13,6 +14,7 @@
             <i class="ph ph-plus-circle text-lg"></i>
             Nuevo Docente
         </button>
+        {% endif %}
     </div>
 </header>
 
@@ -30,6 +32,7 @@
         </div>
 
         <!-- BOTONES GLOBALES DE BASE DE DATOS -->
+        {% if session.get('admin_rol') != 'Consultor' %}
         <div class="flex gap-2 self-end mb-2 shrink-0">
             <div class="relative group">
                 <button
@@ -56,6 +59,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 
     <!-- BARRA DE ACCIONES MASIVAS (Oculta por defecto) -->
@@ -86,15 +90,19 @@
             <table class="w-full text-left relative">
                 <thead class="bg-slate-50 text-xs uppercase text-slate-400 font-bold sticky top-0 z-10 shadow-sm">
                     <tr>
-                        <th class="px-6 py-3 w-12 text-center">
+                        {% if session.get('admin_rol') != 'Consultor' %}
+                        <th class="px-6 py-3 w-12 text-center col-acciones">
                             <input type="checkbox" id="check-todos-docente" onclick="seleccionarTodosDocente(this)"
                                 class="w-4 h-4 text-purple-600 bg-slate-100 border-slate-300 rounded focus:ring-purple-500 focus:ring-2 cursor-pointer transition-all">
                         </th>
+                        {% endif %}
                         <th class="px-6 py-3">DNI</th>
                         <th class="px-6 py-3">Docente</th>
                         <th class="px-6 py-3">Facultad</th>
                         <th class="px-6 py-3">Contacto</th>
-                        <th class="px-6 py-3 text-right">Acciones</th>
+                        {% if session.get('admin_rol') != 'Consultor' %}
+                        <th class="px-6 py-3 text-right col-acciones">Acciones</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-sm" id="tabla-body">
@@ -186,7 +194,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/docente.js') }}"></script>
+<script src="{{ url_for('static', filename='js/docente.js') }}?v=3.1"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         inicializarAdminDocente();

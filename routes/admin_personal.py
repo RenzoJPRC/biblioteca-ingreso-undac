@@ -37,11 +37,11 @@ def eliminar_personal(id):
 @admin_personal_bp.route('/subir_excel_personal', methods=['POST'])
 def subir_excel_personal():
     if 'archivo_excel' not in request.files: 
-        return jsonify({'status': 'error', 'msg': 'Falta archivo'})
+        return jsonify({'status': 'error', 'msg': 'No se adjuntó ningún archivo'})
     
     file = request.files['archivo_excel']
-    if file.filename == '':
-        return jsonify({'status': 'error', 'msg': 'Nombre vacío'})
+    if not file.filename or not file.filename.lower().endswith(('.xlsx', '.xls')):
+        return jsonify({'status': 'error', 'msg': 'Formato no válido. Únicamente se permiten archivos Excel (.xlsx, .xls)'})
         
     try:
         print("1. Recibiendo archivo Excel de Personal y delegando a segundo plano...")

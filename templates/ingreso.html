@@ -271,21 +271,30 @@
                 };
             }
 
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6000);
+
             fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(bodyData)
+                body: JSON.stringify(bodyData),
+                signal: controller.signal
             })
-                .then(res => res.json())
+                .then(res => {
+                    clearTimeout(timeoutId);
+                    if (!res.ok) throw new Error("HTTP " + res.status);
+                    return res.json();
+                })
                 .then(data => mostrar(data))
                 .catch(err => {
-                    console.error(err);
+                    clearTimeout(timeoutId);
+                    console.error("Fallo de red o timeout en escáner:", err);
 
                     mostrar({
                         status: 'error',
-                        msg: 'Error de conexión con el servidor'
+                        msg: '⚠️ ERROR DE CONEXIÓN DE RED LOCAL - ESCANEE OTRA VEZ'
                     });
                 });
         }
@@ -434,7 +443,7 @@
 
                 input.value = '';
                 focarInput();
-            }, 4000);
+            }, 500);
         }
 
         function llenarDatos(data) {

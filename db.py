@@ -13,7 +13,7 @@ def get_db_connection():
             f"DATABASE={os.getenv('DB_DATABASE')};"
             f"Trusted_Connection={os.getenv('DB_TRUSTED_CONNECTION')};"
         )
-        return pyodbc.connect(conn_str)
+        return pyodbc.connect(conn_str, timeout=15)
     except Exception as e:
         print(f"--- ERROR DE CONEXIÓN BD --- : {e}")
         return None

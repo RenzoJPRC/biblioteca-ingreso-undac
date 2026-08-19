@@ -56,14 +56,15 @@ function buscarPersonal(pagina = 1, silent = false) {
                 let html = "";
                 data.data.forEach(p => {
                     const isSeleccionado = seleccionadosPersonal.has(String(p.id));
+                    const isAdmin = window.ADMIN_ROL !== 'Consultor';
 
                     html += `
                         <tr class="hover:bg-slate-50 transition-colors group ${isSeleccionado ? 'bg-purple-50/50' : ''}">
-                            <td class="px-6 py-3 text-center">
+                            ${isAdmin ? `<td class="px-6 py-3 text-center col-acciones">
                                 <input type="checkbox" value="${p.id}" onclick="toggleSeleccionPersonal(this, '${p.id}')"
                                     ${isSeleccionado ? 'checked' : ''}
                                     class="check-fila-personal w-4 h-4 text-purple-600 bg-slate-100 border-slate-300 rounded focus:ring-purple-500 focus:ring-2 cursor-pointer transition-all">
-                            </td>
+                            </td>` : ''}
                             <td class="px-6 py-3 font-mono text-slate-500">${String(p.dni).startsWith('INV-') ? '-' : p.dni}</td>
                             <td class="px-6 py-3 font-bold text-slate-700">${p.nombre}</td>
                             <td class="px-6 py-3 text-slate-600">${p.oficina}</td>
@@ -73,7 +74,7 @@ function buscarPersonal(pagina = 1, silent = false) {
                                     ${p.telefono ? `<span class="flex items-center gap-1"><i class="ph ph-phone text-emerald-500"></i> ${p.telefono}</span>` : ''}
                                 </div>
                             </td>
-                            <td class="px-6 py-3 text-right">
+                            ${isAdmin ? `<td class="px-6 py-3 text-right col-acciones">
                                 <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button onclick='editarPersonal(${JSON.stringify(p).replace(/'/g, "&#39;")})'
                                         class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
@@ -84,7 +85,7 @@ function buscarPersonal(pagina = 1, silent = false) {
                                         <i class="ph ph-trash text-lg"></i>
                                     </button>
                                 </div>
-                            </td>
+                            </td>` : ''}
                         </tr>
                     `;
                 });
@@ -262,7 +263,8 @@ function toggleSeleccionPersonal(checkbox, id) {
     } else {
         seleccionadosPersonal.delete(String(id));
         checkbox.closest('tr').classList.remove('bg-purple-50/50');
-        document.getElementById('check-todos-personal').checked = false;
+        const checkTodos = document.getElementById('check-todos-personal');
+        if (checkTodos) checkTodos.checked = false;
     }
     actualizarBarraFlotantePersonal();
 }
@@ -280,7 +282,8 @@ function actualizarEstadoSeccionPersonal() {
     if (checkboxes.length === 0) return;
 
     const todosSeleccionados = Array.from(checkboxes).every(cb => cb.checked);
-    document.getElementById('check-todos-personal').checked = todosSeleccionados;
+    const checkTodos = document.getElementById('check-todos-personal');
+    if (checkTodos) checkTodos.checked = todosSeleccionados;
     actualizarBarraFlotantePersonal();
 }
 

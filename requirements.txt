@@ -4,3 +4,4 @@ openpyxl
 pyodbc
 python-dotenv
 waitress
+requests

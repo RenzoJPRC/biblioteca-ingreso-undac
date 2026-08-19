@@ -14,9 +14,11 @@ admin_dashboard_bp = Blueprint('admin_dashboard', __name__, url_prefix='/admin')
 def admin_dashboard():
     f_inicio = request.args.get('inicio')
     f_fin = request.args.get('fin')
+    hora_inicio = request.args.get('hora_inicio')
+    hora_fin = request.args.get('hora_fin')
     
     sede_filtro = session.get('admin_sede') if session.get('admin_rol') == 'Supervisor' else None
-    dash_data = obtener_datos_dashboard(f_inicio, f_fin, sede_filtro)
+    dash_data = obtener_datos_dashboard(f_inicio, f_fin, sede_filtro, hora_inicio, hora_fin)
 
     return render_template('admin_dashboard.html', 
                            total_hoy=dash_data['total_hoy'], 
@@ -35,7 +37,9 @@ def admin_dashboard():
                            data_escuelas=dash_data['chart_escuelas_values'], 
                            filtro_label=dash_data['filtro_label'], 
                            params_inicio=f_inicio or '', 
-                           params_fin=f_fin or '')
+                           params_fin=f_fin or '',
+                           params_hora_inicio=hora_inicio or '',
+                           params_hora_fin=hora_fin or '')
 
 @admin_dashboard_bp.route('/api/dashboard_stream')
 def api_dashboard_stream():
@@ -44,7 +48,7 @@ def api_dashboard_stream():
     def generate():
         while True:
             try:
-                dash_data = obtener_datos_dashboard(None, None, sede_filtro)
+                dash_data = obtener_datos_dashboard(None, None, sede_filtro, None, None)
                 payload = {
                     'total_hoy': dash_data['total_hoy'],
                     'total_alumnos': dash_data['total_alumnos'],
@@ -68,10 +72,12 @@ def api_dashboard_stream():
 def exportar_ingresos_excel():
     f_inicio = request.args.get('inicio')
     f_fin = request.args.get('fin')
+    hora_inicio = request.args.get('hora_inicio')
+    hora_fin = request.args.get('hora_fin')
 
     sede_filtro = session.get('admin_sede') if session.get('admin_rol') == 'Supervisor' else None
 
-    registros = obtener_registros_csv(f_inicio, f_fin, sede_filtro)
+    registros = obtener_registros_csv(f_inicio, f_fin, sede_filtro, hora_inicio, hora_fin)
 
     datos_limpios = [tuple(r) for r in registros]
 
@@ -159,3 +165,29 @@ def exportar_ingresos_excel():
         as_attachment=True,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
+
+@admin_dashboard_bp.route('/imprimir_reporte')
+def imprimir_reporte():
+    f_inicio = request.args.get('inicio')
+    f_fin = request.args.get('fin')
+    hora_inicio = request.args.get('hora_inicio')
+    hora_fin = request.args.get('hora_fin')
+
+    sede_filtro = session.get('admin_sede') if session.get('admin_rol') == 'Supervisor' else None
+
+    registros = obtener_registros_csv(f_inicio, f_fin, sede_filtro, hora_inicio, hora_fin)
+
+    # Determinar título
+    titulo = "Reporte General de Ingresos"
+    if f_inicio and f_fin:
+        if f_inicio == f_fin:
+            titulo = f"Reporte de Ingresos del {f_inicio}"
+        else:
+            titulo = f"Reporte de Ingresos desde {f_inicio} hasta {f_fin}"
+    else:
+        titulo = "Reporte de Ingresos de Hoy"
+        
+    if hora_inicio and hora_fin:
+        titulo += f" (De {hora_inicio} a {hora_fin})"
+
+    return render_template('admin_reporte_print.html', registros=registros, titulo=titulo)

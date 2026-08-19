@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, session, redirect, url_for
+from flask import Blueprint, render_template, session, redirect, url_for
 from utils.queries_auditoria import obtener_auditoria_dashboard
 import json
 
@@ -73,7 +73,7 @@ def parsear_detalle(detalle_str):
                     items.append(f"{k}: {v}")
             return " ➔ ".join(items) if items else "Sin metadatos relevantes"
         return detalle_str
-    except Exception as e:
+    except Exception:
         return detalle_str
 
 @admin_auditoria_bp.route('/')

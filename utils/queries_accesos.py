@@ -7,7 +7,7 @@ def get_all_usuarios():
         cursor = conn.cursor()
         cursor.execute("SELECT UsuarioID, Usuario, Email, Rol, SedeAsignada, Activo, FORMAT(CreadoEn, 'dd/MM/yyyy') FROM UsuariosSistema")
         return cursor.fetchall()
-    except Exception as e:
+    except Exception:
         return None
     finally:
         conn.close()
@@ -54,7 +54,7 @@ def check_admin_auth(usuario_current):
         cursor = conn.cursor()
         cursor.execute("SELECT PasswordHash, Rol FROM UsuariosSistema WHERE Usuario = ?", (usuario_current,))
         return cursor.fetchone()
-    except Exception as e:
+    except Exception:
         return None
     finally:
         conn.close()

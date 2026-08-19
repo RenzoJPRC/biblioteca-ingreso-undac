@@ -88,9 +88,28 @@ def filial(sede):
     nombre_sala = row.NombreSala
     piso = row.Piso
         
+    # Obtener la cantidad de ingresos exitosos de hoy para esta sala (filial)
+    contador_inicial = 0
+    try:
+        cursor.execute("""
+            SELECT COUNT(*) 
+            FROM RegistroIngresos 
+            WHERE SalaID = ? AND CAST(FechaHora AS DATE) = CAST(GETDATE() AS DATE)
+        """, (sala_id,))
+        res = cursor.fetchone()
+        if res:
+            contador_inicial = res[0]
+    except Exception as e:
+        print("Aviso - No se pudo cargar el contador inicial en filial:", e)
+
     conn.close()
     
-    return render_template('ingreso.html', sala_id=sala_id, nombre_sala=nombre_sala, piso=piso, sede=sede)
+    return render_template('ingreso.html', 
+                           sala_id=sala_id, 
+                           nombre_sala=nombre_sala, 
+                           piso=piso, 
+                           sede=sede,
+                           contador_inicial=contador_inicial)
 
 # API: PROCESAR EL ESCANEO
 @ingreso_bp.route('/procesar_ingreso', methods=['POST'])

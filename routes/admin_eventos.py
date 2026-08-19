@@ -52,8 +52,8 @@ def importar_invitados():
     file = request.files['file']
     evento_id = request.form.get('evento_id')
     
-    if file.filename == '':
-        return jsonify({'status': 'error', 'msg': 'Archivo no seleccionado'})
+    if file.filename == '' or not file.filename.lower().endswith(('.xlsx', '.xls')):
+        return jsonify({'status': 'error', 'msg': 'Formato no válido. Únicamente se permiten archivos Excel (.xlsx, .xls)'})
         
     if not evento_id:
         return jsonify({'status': 'error', 'msg': 'Falta el ID del evento'})

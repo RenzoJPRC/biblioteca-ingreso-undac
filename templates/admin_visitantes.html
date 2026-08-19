@@ -5,6 +5,7 @@
     <h2 class="text-lg font-bold text-slate-700">Gestión de Visitantes</h2>
 
     <div class="flex gap-2">
+        {% if session.get('admin_rol') != 'Consultor' %}
         <button onclick="document.getElementById('modal-upload-vis').classList.remove('hidden')"
             class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow flex items-center gap-2">
             <i class="ph ph-file-csv"></i> Importar Excel
@@ -14,6 +15,7 @@
             <i class="ph ph-plus-circle text-lg"></i>
             <span>Nuevo Visitante</span>
         </button>
+        {% endif %}
     </div>
 </header>
 
@@ -34,6 +36,7 @@
             </div>
 
             <!-- ACCIONES GLOBALES -->
+            {% if session.get('admin_rol') != 'Consultor' %}
             <div class="relative group shrink-0">
                 <button
                     class="bg-white border text-sm border-slate-200 text-slate-600 hover:bg-slate-50 px-4 py-2.5 rounded-lg font-bold shadow-sm flex items-center gap-2 transition-all h-full">
@@ -55,6 +58,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
 
         </div>
     </div>
@@ -76,7 +80,9 @@
                         <th class="px-6 py-3 w-1/6">DNI</th>
                         <th class="px-6 py-3 w-1/4">Institución</th>
                         <th class="px-6 py-3 w-1/4">Correo</th>
+                        {% if session.get('admin_rol') != 'Consultor' %}
                         <th class="px-6 py-3 text-right w-24">Acciones</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -114,6 +120,7 @@
                                 class="hidden w-full border border-blue-400 rounded px-2 py-1 text-slate-900 outline-none bg-blue-50 focus:ring-2 focus:ring-blue-200">
                         </td>
 
+                        {% if session.get('admin_rol') != 'Consultor' %}
                         <td class="px-6 py-3 text-right flex justify-end gap-1">
                             <button id="btn-editar-{{v[0]}}" onclick="activarEdicion('{{v[0]}}')"
                                 class="text-slate-400 hover:text-blue-600 bg-white border border-slate-200 hover:border-blue-300 px-3 py-1 rounded shadow-sm transition-all text-xs font-bold inline-flex items-center gap-1">
@@ -139,6 +146,7 @@
                                 </button>
                             </div>
                         </td>
+                        {% endif %}
                     </tr>
                     {% else %}
                     <tr>
@@ -212,7 +220,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/visitantes.js') }}?v=3.0"></script>
+<script src="{{ url_for('static', filename='js/visitantes.js') }}?v=3.1"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         inicializarFormularioVisitante();

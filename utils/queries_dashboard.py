@@ -1,6 +1,6 @@
 from db import get_db_connection
 
-def obtener_datos_dashboard(f_inicio, f_fin, sede_filtro=None):
+def obtener_datos_dashboard(f_inicio, f_fin, sede_filtro=None, hora_inicio=None, hora_fin=None):
     conn = get_db_connection()
     if not conn: return {}
     cursor = conn.cursor()
@@ -13,6 +13,11 @@ def obtener_datos_dashboard(f_inicio, f_fin, sede_filtro=None):
         date_where = "CAST(FechaHora AS DATE) = CAST(GETDATE() AS DATE)"
         base_params = []
         filtro_label = "Datos de Hoy"
+
+    if hora_inicio and hora_fin:
+        date_where += " AND CAST(FechaHora AS TIME) >= ? AND CAST(FechaHora AS TIME) <= ?"
+        base_params.extend([hora_inicio, hora_fin])
+        filtro_label += f" ({hora_inicio} - {hora_fin})"
 
     date_where_g = date_where
     date_where_r = date_where
@@ -170,7 +175,7 @@ def obtener_datos_dashboard(f_inicio, f_fin, sede_filtro=None):
         'filtro_label': filtro_label
     }
 
-def obtener_registros_csv(f_inicio, f_fin, sede_filtro=None):
+def obtener_registros_csv(f_inicio, f_fin, sede_filtro=None, hora_inicio=None, hora_fin=None):
     conn = get_db_connection()
     if not conn:
         return []
@@ -185,6 +190,10 @@ def obtener_registros_csv(f_inicio, f_fin, sede_filtro=None):
             base_params = [f_inicio, f_fin]
         else:
             date_where = "CAST(R.FechaHora AS DATE) = CAST(GETDATE() AS DATE)"
+
+        if hora_inicio and hora_fin:
+            date_where += " AND CAST(R.FechaHora AS TIME) >= ? AND CAST(R.FechaHora AS TIME) <= ?"
+            base_params.extend([hora_inicio, hora_fin])
 
         if sede_filtro and sede_filtro != 'Todas':
             if sede_filtro == 'Central':

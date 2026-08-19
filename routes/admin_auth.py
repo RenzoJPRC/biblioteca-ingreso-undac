@@ -1,8 +1,6 @@
 from flask import Blueprint, render_template, request, session, redirect, url_for, flash
-import pyodbc
 from werkzeug.security import check_password_hash
 from db import get_db_connection
-import time
 import json
 
 admin_auth_bp = Blueprint('admin_auth', __name__, url_prefix='/admin')
@@ -15,6 +13,8 @@ BLOQUEO_SEGUNDOS = 900 # 15 minutos
 @admin_auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if 'admin_user' in session:
+        if session.get('admin_rol') == 'Consultor':
+            return redirect(url_for('admin_carnets.gestion_carnets'))
         return redirect(url_for('admin_dashboard.admin_dashboard'))
         
     if request.method == 'POST':
@@ -52,13 +52,11 @@ def login():
                 conn.close()
                 return render_template('admin_login.html')
 
-            hash_guardado = row.PasswordHash
-            es_valido = False
-            
-            if not hash_guardado.startswith('scrypt:') and not hash_guardado.startswith('pbkdf2:'):
-                es_valido = (hash_guardado == password)
-            else:
+            hash_guardado = row.PasswordHash or ''
+            try:
                 es_valido = check_password_hash(hash_guardado, password)
+            except Exception:
+                es_valido = False
 
             if es_valido:
                 if not row.Activo:
@@ -72,6 +70,8 @@ def login():
                     session['admin_rol'] = row.Rol
                     session['admin_sede'] = row.SedeAsignada or 'Central'
                     conn.close()
+                    if row.Rol == 'Consultor':
+                        return redirect(url_for('admin_carnets.gestion_carnets'))
                     return redirect(url_for('admin_dashboard.admin_dashboard'))
             else:
                 # Contraseña incorrecta

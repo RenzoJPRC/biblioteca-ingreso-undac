@@ -44,7 +44,13 @@ function inicializarFormularioVisitante() {
 }
 
 function vaciarBdVisitantes() {
-    if (!confirm("⚠️ ATENCIÓN: Estás a punto de ELIMINAR TODOS los visitantes de la base de datos.\nEsta acción es irreversible.\n¿Estás completamente seguro de continuar?")) return;
+    const code = Math.floor(1000 + Math.random() * 9000);
+    const promptStr = prompt(`⚠️ ¡PELIGRO CRÍTICO! ⚠️\nEstás a punto de ELIMINAR TODOS LOS VISITANTES de la base de datos.\nEsta acción borrará los registros permanentemente y NO SE PUEDE RECUPERAR.\n\nEscribe el código "${code}" para autorizar la purga de visitantes:`);
+
+    if (promptStr !== String(code)) {
+        alert("Código de seguridad incorrecto. Purga abortada.");
+        return;
+    }
 
     fetch('/admin/vaciar_visitantes', {
         method: 'POST'

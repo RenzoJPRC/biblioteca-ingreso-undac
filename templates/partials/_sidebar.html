@@ -24,6 +24,7 @@
 
     <nav class="flex-1 overflow-y-auto no-scrollbar py-4 px-3 space-y-6">
 
+        {% if session.get('admin_rol') != 'Consultor' %}
         <div>
             <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Control de Acceso</p>
             <div class="space-y-1">
@@ -39,8 +40,9 @@
                 </a>
             </div>
         </div>
+        {% endif %}
 
-        {% if session.get('admin_rol') == 'SuperAdmin' %}
+        {% if session.get('admin_rol') in ['SuperAdmin', 'Consultor'] %}
         <div>
             <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Gestión de Usuarios</p>
             <div class="space-y-1">
@@ -72,6 +74,7 @@
             </div>
         </div>
 
+        {% if session.get('admin_rol') != 'Consultor' %}
         <div>
             <p class="px-3 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Sistema y Seguridad</p>
             <div class="space-y-1">
@@ -98,11 +101,20 @@
                 </a>
             </div>
         </div>
-        {% else %}
+        {% endif %}
+        {% elif session.get('admin_rol') == 'Supervisor' %}
         <div class="p-4 bg-sky-900/20 border border-sky-800 rounded-lg mx-2 text-center mt-6">
             <i class="ph-fill ph-info text-sky-500 text-2xl mb-2"></i>
             <p class="text-xs text-slate-400">Modo Supervisor</p>
             <p class="text-[10px] text-slate-500 mt-1">Vistas de edición bloqueadas por seguridad.</p>
+        </div>
+        {% endif %}
+
+        {% if session.get('admin_rol') == 'Consultor' %}
+        <div class="p-4 bg-emerald-900/20 border border-emerald-800 rounded-lg mx-2 text-center mt-6">
+            <i class="ph-fill ph-magnifying-glass text-emerald-500 text-2xl mb-2"></i>
+            <p class="text-xs text-slate-400">Modo Consultor</p>
+            <p class="text-[10px] text-slate-500 mt-1">Acceso de Solo Lectura. Cambios deshabilitados.</p>
         </div>
         {% endif %}
 

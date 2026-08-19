@@ -1,5 +1,4 @@
 from flask import Blueprint, render_template, request, jsonify
-import pandas as pd
 import sys
 import os
 
@@ -43,15 +42,11 @@ def buscar_egresado():
 @admin_egresados_bp.route('/guardar_egresado', methods=['POST'])
 def guardar_egresado():
     data = request.json
-    egresado_id = data.get('id')
     nombre = data.get('nombre')
     dni = data.get('dni')
     codigo = data.get('codigo')
     facultad = data.get('facultad')
     escuela = data.get('escuela')
-    correo_personal = data.get('correo_personal')
-    correo_inst = data.get('correo_inst')
-    celular = data.get('celular')
 
     if not all([nombre, dni, codigo, facultad, escuela]):
         return jsonify({'status': 'error', 'msg': 'Faltan campos obligatorios'})
@@ -64,9 +59,11 @@ def guardar_egresado():
 
 @admin_egresados_bp.route('/subir_excel_egresados', methods=['POST'])
 def subir_excel_egresados():
-    if 'archivo_excel' not in request.files: return jsonify({'status': 'error', 'msg': 'Falta archivo'})
+    if 'archivo_excel' not in request.files: 
+        return jsonify({'status': 'error', 'msg': 'No se adjuntó ningún archivo'})
     file = request.files['archivo_excel']
-    if file.filename == '': return jsonify({'status': 'error', 'msg': 'Nombre vacío'})
+    if not file.filename or not file.filename.lower().endswith(('.xlsx', '.xls')):
+        return jsonify({'status': 'error', 'msg': 'Formato no válido. Únicamente se permiten archivos Excel (.xlsx, .xls)'})
 
     try:
         print("1. Recibiendo archivo Excel de Egresados y delegando a segundo plano...")

@@ -8,7 +8,7 @@
     </div>
 
     <div class="flex gap-2">
-        <form method="GET" action="/admin/"
+        <form id="filtro-form" method="GET" action="/admin/"
             class="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2 mr-2">
             <input type="date" name="inicio" value="{{ params_inicio }}"
                 class="bg-transparent border-none text-xs text-slate-600 focus:ring-0 outline-none cursor-pointer p-2"
@@ -17,10 +17,17 @@
             <input type="date" name="fin" value="{{ params_fin }}"
                 class="bg-transparent border-none text-xs text-slate-600 focus:ring-0 outline-none cursor-pointer p-2"
                 required>
+                
+            <span class="text-slate-300 mx-1 border-l border-slate-200 pl-2">Hora:</span>
+            <input type="time" name="hora_inicio" value="{{ params_hora_inicio }}"
+                class="bg-transparent border-none text-xs text-slate-600 focus:ring-0 outline-none cursor-pointer p-1">
+            <span class="text-slate-300 mx-1">-</span>
+            <input type="time" name="hora_fin" value="{{ params_hora_fin }}"
+                class="bg-transparent border-none text-xs text-slate-600 focus:ring-0 outline-none cursor-pointer p-1">
 
             <button type="submit"
                 class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase px-2 py-2 transition-colors">Filtrar</button>
-            {% if params_inicio %}
+            {% if params_inicio or params_hora_inicio %}
             <a href="/admin/" class="text-slate-400 hover:text-rose-500 px-2 py-2 transition-colors"
                 title="Limpiar Filtros">
                 <i class="ph ph-x"></i>
@@ -28,10 +35,14 @@
             {% endif %}
         </form>
 
-        <a href="/admin/exportar_ingresos_excel?inicio={{ params_inicio }}&fin={{ params_fin }}"
+        <button onclick="exportarExcelConFiltros()"
             class="flex items-center gap-2 bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-bold uppercase hover:bg-emerald-500 transition-colors">
-            <i class="ph ph-download-simple text-lg"></i> Exportar Excel
-        </a>
+            <i class="ph ph-file-xls text-lg"></i> Excel
+        </button>
+        <button onclick="imprimirPDFConFiltros()"
+            class="flex items-center gap-2 bg-rose-600 text-white px-3 py-2 rounded-lg text-xs font-bold uppercase hover:bg-rose-500 transition-colors">
+            <i class="ph ph-printer text-lg"></i> Imprimir PDF
+        </button>
     </div>
 </header>
 
@@ -258,6 +269,18 @@
         });
         btnEl.classList.remove('text-slate-400');
         btnEl.classList.add('active', 'text-sky-600', 'border-b-2', 'border-sky-600');
+    }
+
+    function exportarExcelConFiltros() {
+        const form = document.getElementById('filtro-form');
+        const urlParams = new URLSearchParams(new FormData(form));
+        window.location.href = "/admin/exportar_ingresos_excel?" + urlParams.toString();
+    }
+
+    function imprimirPDFConFiltros() {
+        const form = document.getElementById('filtro-form');
+        const urlParams = new URLSearchParams(new FormData(form));
+        window.open("/admin/imprimir_reporte?" + urlParams.toString(), "_blank");
     }
 </script>
 {% endblock %}

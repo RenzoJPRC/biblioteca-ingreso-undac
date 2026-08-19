@@ -26,6 +26,8 @@
     {% include 'partials/_toast.html' %}
 
     <script>
+        window.ADMIN_ROL = "{{ session.get('admin_rol', '') }}";
+        
         // Interceptor Global Avanzado (Anti-CSRF)
         // Autoinyecta criptográficamente el Token Sesión en cada petición Fetch (POST/DELETE) aislando el Backend
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;

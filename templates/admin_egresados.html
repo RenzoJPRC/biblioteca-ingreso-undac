@@ -4,6 +4,7 @@
 <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
     <h2 class="text-lg font-bold text-slate-700">Gestión de Egresados</h2>
     <div class="flex gap-2">
+        {% if session.get('admin_rol') != 'Consultor' %}
         <button onclick="document.getElementById('modal-upload-egresados').classList.remove('hidden')"
             class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow flex items-center gap-2 transition-colors">
             <i class="ph ph-file-csv text-lg"></i> Importar Excel
@@ -13,6 +14,7 @@
             <i class="ph ph-plus-circle text-lg"></i>
             Nuevo Egresado
         </button>
+        {% endif %}
     </div>
 </header>
 
@@ -31,6 +33,7 @@
         </div>
 
         <!-- BOTONES GLOBALES DE BASE DE DATOS -->
+        {% if session.get('admin_rol') != 'Consultor' %}
         <div class="flex gap-2 self-end mb-2 shrink-0">
             <div class="relative group">
                 <button
@@ -57,6 +60,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 
     <!-- BARRA DE ACCIONES MASIVAS (Oculta por defecto) -->
@@ -86,16 +90,20 @@
             <table class="w-full text-left border-collapse">
                 <thead class="bg-slate-50 text-xs uppercase text-slate-400 font-bold sticky top-0 z-10 shadow-sm">
                     <tr>
-                        <th class="px-6 py-3 bg-slate-50 border-b border-slate-200 w-12 text-center">
+                        {% if session.get('admin_rol') != 'Consultor' %}
+                        <th class="px-6 py-3 bg-slate-50 border-b border-slate-200 w-12 text-center col-acciones">
                             <input type="checkbox" id="check-todos" onclick="seleccionarTodos(this)"
                                 class="w-4 h-4 text-emerald-600 bg-slate-100 border-slate-300 rounded focus:ring-emerald-500 focus:ring-2 cursor-pointer transition-all">
                         </th>
+                        {% endif %}
                         <th class="px-6 py-3 bg-slate-50 border-b border-slate-200">Egresado</th>
                         <th class="px-6 py-3 bg-slate-50 border-b border-slate-200">DNI / Código</th>
                         <th class="px-6 py-3 bg-slate-50 border-b border-slate-200">Facultad / Escuela</th>
                         <th class="px-6 py-3 bg-slate-50 border-b border-slate-200">Contacto</th>
                         <th class="px-6 py-3 bg-slate-50 border-b border-slate-200">Estado</th>
-                        <th class="px-6 py-3 bg-slate-50 border-b border-slate-200 text-center">Acciones</th>
+                        {% if session.get('admin_rol') != 'Consultor' %}
+                        <th class="px-6 py-3 bg-slate-50 border-b border-slate-200 text-center col-acciones">Acciones</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-sm" id="tabla-body">
@@ -223,6 +231,9 @@
         currentPage = pagina;
 
         const url = `/admin/buscar_egresado?q=${query}&page=${currentPage}`;
+        
+        const checkTodos = document.getElementById('check-todos');
+        if (checkTodos) checkTodos.checked = false;
 
         const info = document.getElementById('info-paginacion');
         if (!silent) info.innerText = "Cargando...";
@@ -255,14 +266,15 @@
                         : `<span class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-bold">INACTIVO</span>`;
 
                     const isSeleccionado = seleccionados.has(String(egre.id));
+                    const isAdmin = window.ADMIN_ROL !== 'Consultor';
 
                     html += `
                         <tr class="hover:bg-slate-50 transition-colors group ${isSeleccionado ? 'bg-emerald-50/50' : ''}">
-                        <td class="px-6 py-3 border-b border-slate-50 text-center">
+                        ${isAdmin ? `<td class="px-6 py-3 border-b border-slate-50 text-center col-acciones">
                             <input type="checkbox" value="${egre.id}" onclick="toggleSeleccion(this, '${egre.id}')"
                                 ${isSeleccionado ? 'checked' : ''}
                                 class="check-fila w-4 h-4 text-emerald-600 bg-slate-100 border-slate-300 rounded focus:ring-emerald-500 focus:ring-2 cursor-pointer transition-all">
-                        </td>
+                        </td>` : ''}
                         <td class="px-6 py-3 font-medium text-slate-700 border-b border-slate-50">${egre.nombre}</td>
                         <td class="px-6 py-3 border-b border-slate-50">
                             <div class="text-slate-600 font-bold">${String(egre.dni).startsWith('INV-') ? '-' : egre.dni}</div>
@@ -277,7 +289,7 @@
                             ${egre.correo_personal ? `<div class="text-slate-400 truncate w-32" title="${egre.correo_personal}"><i class="ph ph-envelope mr-1"></i>${egre.correo_personal}</div>` : '<span class="text-slate-300 italic">Sin contacto</span>'}
                         </td>
                         <td class="px-6 py-3 border-b border-slate-50">${estadoHtml}</td>
-                        <td class="px-6 py-3 text-center border-b border-slate-50 flex justify-center gap-1">
+                        ${isAdmin ? `<td class="px-6 py-3 text-center border-b border-slate-50 flex justify-center gap-1 col-acciones">
                             <button onclick='abrirModalEditar(${JSON.stringify(egre)})' 
                                     class="text-slate-400 hover:text-emerald-600 p-2 rounded-full hover:bg-emerald-50 transition-all font-bold" title="Editar Egresado">
                                 <i class="ph ph-pencil-simple text-lg"></i>
@@ -286,7 +298,7 @@
                                     class="text-slate-400 hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition-all font-bold" title="Eliminar Egresado">
                                 <i class="ph ph-trash text-lg"></i>
                             </button>
-                        </td>
+                        </td>` : ''}
                     </tr>`;
                 });
 
@@ -523,7 +535,8 @@
         } else {
             seleccionados.delete(String(id));
             checkbox.closest('tr').classList.remove('bg-emerald-50/50');
-            document.getElementById('check-todos').checked = false;
+            const checkTodos = document.getElementById('check-todos');
+            if (checkTodos) checkTodos.checked = false;
         }
         actualizarBarraFlotante();
     }
@@ -541,7 +554,8 @@
         if (checkboxes.length === 0) return;
 
         const todosSeleccionados = Array.from(checkboxes).every(cb => cb.checked);
-        document.getElementById('check-todos').checked = todosSeleccionados;
+        const checkTodos = document.getElementById('check-todos');
+        if (checkTodos) checkTodos.checked = todosSeleccionados;
         actualizarBarraFlotante();
     }
 

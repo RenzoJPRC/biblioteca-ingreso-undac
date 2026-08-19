@@ -1,4 +1,4 @@
-from flask import Flask, request, session, redirect, url_for
+from flask import Flask, request, session, redirect, url_for, jsonify
 import os
 import secrets
 from datetime import timedelta
@@ -137,7 +137,8 @@ def requerir_login_admin():
             "/admin/eventos",
             "/admin/buscar_eventos",
             "/admin/guardar_evento",
-            "/admin/importar_invitados_evento"
+            "/admin/importar_invitados_evento",
+            "/admin/imprimir_reporte"
         ]
 
         es_dinamica = (
@@ -152,6 +153,30 @@ def requerir_login_admin():
             <h1>403 Forbidden</h1>
             <p>Tu rol de Supervisor no tiene permisos para visitar este módulo.</p>
             <a href="/admin/">Volver al Dashboard</a>
+            """, 403
+
+    # Restricción para rol Consultor
+    if session.get("admin_rol") == "Consultor":
+        if request.method in ["POST", "PUT", "PATCH", "DELETE"] and request.path != "/admin/login" and request.path != "/admin/logout":
+            return jsonify({'status': 'error', 'msg': 'Operación denegada. Rol Consultor (Solo Lectura).'})
+
+        rutas_permitidas = [
+            "/admin/login",
+            "/admin/logout",
+            "/admin/carnets",
+            "/admin/egresados",
+            "/admin/docentes",
+            "/admin/personal",
+            "/admin/visitantes"
+        ]
+
+        es_busqueda = request.path.startswith("/admin/buscar_")
+        
+        if request.path not in rutas_permitidas and not es_busqueda and not request.path.startswith("/admin/static"):
+            return """
+            <h1>403 Forbidden</h1>
+            <p>Tu rol de Consultor solo tiene acceso de lectura a los módulos de listas.</p>
+            <a href="/admin/carnets">Ir a Alumnos</a>
             """, 403
 
 
@@ -261,9 +286,14 @@ if __name__ == "__main__":
 
     try:
         from waitress import serve
-        serve(app, host="0.0.0.0", port=port, threads=6)
+        serve(app, host="0.0.0.0", port=port, threads=16)
 
     except KeyboardInterrupt:
         print("\n[*] Servidor apagado por el administrador.")
         os._exit(0)
+    except OSError as e:
+        print(f"\n[AVISO] No se pudo abrir el puerto {port}: {e}")
+        print("[!] Esto ocurre si ya tienes el sistema ejecutándose en otra ventana o consola.")
+        print("[!] Verifica las ventanas abiertas o cierra la ventana previa antes de iniciar de nuevo.")
+        os._exit(1)
 

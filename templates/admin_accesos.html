@@ -53,6 +53,9 @@
                         {% elif reg[3] == 'Supervisor' %}
                         <span
                             class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded font-bold uppercase">Supervisor</span>
+                        {% elif reg[3] == 'Consultor' %}
+                        <span
+                            class="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded font-bold uppercase">Consultor</span>
                         {% else %}
                         <span class="bg-amber-100 text-amber-700 text-xs px-2 py-1 rounded font-bold uppercase">{{
                             reg[3] }}</span>
@@ -148,6 +151,7 @@
                         class="w-full border border-slate-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none"
                         onchange="document.getElementById('sede-container').style.display = this.value === 'SuperAdmin' ? 'none' : 'block'">
                         <option value="Supervisor">Supervisor</option>
+                        <option value="Consultor">Consultor</option>
                         <option value="SuperAdmin">SuperAdmin</option>
                     </select>
                 </div>

@@ -21,8 +21,9 @@ function buscarAlumno(pagina = 1, silent = false) {
     const url = `/admin/buscar_alumno?q=${query}&page=${currentPage}`;
 
     // NO reseteamos selectedIds aquí para mantener selección entre búsquedas/páginas
-    // Solo reseteamos el check "master" visual
-    document.getElementById('check-todos').checked = false;
+    // Solo reseteamos el check "master" visual si existe
+    const checkTodos = document.getElementById('check-todos');
+    if (checkTodos) checkTodos.checked = false;
 
     // Indicador de carga
     const info = document.getElementById('info-paginacion');
@@ -64,12 +65,14 @@ function buscarAlumno(pagina = 1, silent = false) {
                 // Verificar si está seleccionado
                 const isChecked = selectedIds.has(String(alumno.id)) ? 'checked' : '';
 
+                const isAdmin = window.ADMIN_ROL !== 'Consultor';
+
                 html += `
                     <tr class="hover:bg-slate-50 transition-colors group">
-                    <td class="px-6 py-3 text-center border-b border-slate-50 relative">
+                    ${isAdmin ? `<td class="px-6 py-3 text-center border-b border-slate-50 relative col-acciones">
                         <input type="checkbox" value="${alumno.id}" onchange="toggleIndividual(this)" ${isChecked}
                                class="check-alumno w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 cursor-pointer">
-                    </td>
+                    </td>` : ''}
                     <td class="px-6 py-3 font-medium text-slate-700 border-b border-slate-50">${alumno.nombre}</td>
                     <td class="px-6 py-3 border-b border-slate-50">
                         <div class="text-slate-600">${alumno.dni}</div>
@@ -78,7 +81,7 @@ function buscarAlumno(pagina = 1, silent = false) {
                     <td class="px-6 py-3 text-slate-500 text-xs border-b border-slate-50">${alumno.escuela}</td>
                     <td class="px-6 py-3 font-mono text-xs border-b border-slate-50">${fechaManual}</td>
                     <td class="px-6 py-3 border-b border-slate-50">${estadoHtml}</td>
-                    <td class="px-6 py-3 text-center border-b border-slate-50 relative">
+                    ${isAdmin ? `<td class="px-6 py-3 text-center border-b border-slate-50 relative col-acciones">
                         <div class="flex justify-center gap-1 opacity-100 transition-opacity">
                             <button onclick='abrirModal(${JSON.stringify(alumno).replace(/'/g, "&#39;")})' 
                                     class="text-slate-400 hover:text-sky-600 p-2 rounded-full hover:bg-sky-50 transition-all" title="Editar Alumno">
@@ -89,7 +92,7 @@ function buscarAlumno(pagina = 1, silent = false) {
                                 <i class="ph ph-trash text-lg"></i>
                             </button>
                         </div>
-                    </td>
+                    </td>` : ''}
                 </tr>`;
             });
 
